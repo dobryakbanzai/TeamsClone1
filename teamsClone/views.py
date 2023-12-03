@@ -1,11 +1,13 @@
-from .models import InformationSubject, Subject, Task, File, Users
-from .serializers import UsersSerializer, InformationSubjectSerializer, SubjectSerializer, FileSerializer, \
-    TaskSerializer
+from .models import Subject, Task, Users, Group, GroupTask
+from .serializers import UsersSerializer, SubjectSerializer, \
+    TaskSerializer, GroupNameSerializer
 from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from django.http import JsonResponse
-from django.db import connection
+from django.db.models import Q
+
+from datetime import datetime, time
 
 
 # SERIALIZERS
@@ -14,18 +16,8 @@ def serialize_users(users):
     return serializer.data
 
 
-def serialize_information_subject(info_subject):
-    serializer = InformationSubjectSerializer(info_subject)
-    return serializer.data
-
-
 def serialize_subject(subject):
     serializer = SubjectSerializer(subject)
-    return serializer.data
-
-
-def serialize_file(file_obj):
-    serializer = FileSerializer(file_obj)
     return serializer.data
 
 
@@ -46,32 +38,12 @@ def create_user_serialized(request):
 
 
 @api_view(['POST'])
-def create_information_subject_serialized(request):
-    serializer = InformationSubjectSerializer(data=request.data)
-    if serializer.is_valid():
-        info_subject = InformationSubject.objects.create(**serializer.validated_data)
-        serialized_info_subject = InformationSubjectSerializer(info_subject).data
-        return Response(serialized_info_subject, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
 def create_subject_serialized(request):
     serializer = SubjectSerializer(data=request.data)
     if serializer.is_valid():
         subject = Subject.objects.create(**serializer.validated_data)
         serialized_subject = SubjectSerializer(subject).data
         return Response(serialized_subject, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def create_file_serialized(request):
-    serializer = FileSerializer(data=request.data)
-    if serializer.is_valid():
-        file_obj = File.objects.create(**serializer.validated_data)
-        serialized_file = FileSerializer(file_obj).data
-        return Response(serialized_file, status=status.HTTP_201_CREATED)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -93,11 +65,10 @@ def get_all_users_serialized(request):
     return Response({'users': serialized_users})
 
 
-@api_view(['GET'])
-def get_all_information_subjects_serialized(request):
-    info_subjects = InformationSubject.objects.all()
-    serialized_info_subjects = InformationSubjectSerializer(info_subjects, many=True).data
-    return Response({'information_subjects': serialized_info_subjects})
+def get_unique_groups():
+    unique_groups = Group.objects.values('name').distinct()
+    serialize_unique_groups = GroupNameSerializer(unique_groups, many=True).data
+    return serialize_unique_groups
 
 
 @api_view(['GET'])
@@ -105,13 +76,6 @@ def get_all_subjects_serialized(request):
     subjects = Subject.objects.all()
     serialized_subjects = SubjectSerializer(subjects, many=True).data
     return Response({'subjects': serialized_subjects})
-
-
-@api_view(['GET'])
-def get_all_files_serialized(request):
-    files = File.objects.all()
-    serialized_files = FileSerializer(files, many=True).data
-    return Response({'files': serialized_files})
 
 
 @api_view(['GET'])
@@ -140,21 +104,6 @@ def update_user_serialized(request, user_id):
 
 
 @api_view(['PUT'])
-def update_information_subject_serialized(request, info_subject_id):
-    info_subject = get_information_subject_by_id(info_subject_id)
-    if not info_subject:
-        return Response({'error': 'InformationSubject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = InformationSubjectSerializer(instance=info_subject, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        updated_info_subject = get_information_subject_by_id(info_subject_id)
-        serialized_info_subject = InformationSubjectSerializer(updated_info_subject).data
-        return Response(serialized_info_subject, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT'])
 def update_subject_serialized(request, subject_id):
     subject = get_subject_by_id(subject_id)
     if not subject:
@@ -166,21 +115,6 @@ def update_subject_serialized(request, subject_id):
         updated_subject = get_subject_by_id(subject_id)
         serialized_subject = SubjectSerializer(updated_subject).data
         return Response(serialized_subject, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT'])
-def update_file_serialized(request, file_id):
-    file_obj = get_file_by_id(file_id)
-    if not file_obj:
-        return Response({'error': 'File not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = FileSerializer(instance=file_obj, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        updated_file = get_file_by_id(file_id)
-        serialized_file = FileSerializer(updated_file).data
-        return Response(serialized_file, status=status.HTTP_200_OK)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -214,54 +148,6 @@ def delete_user_serialized(request, user_id):
     return Response(serialized_user, status=status.HTTP_204_NO_CONTENT)
 
 
-@api_view(['DELETE'])
-def delete_information_subject_serialized(request, info_subject_id):
-    info_subject = get_information_subject_by_id(info_subject_id)
-    if not info_subject:
-        return Response({'error': 'InformationSubject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    deleted_info_subject = info_subject
-    info_subject.delete()
-    serialized_info_subject = InformationSubjectSerializer(deleted_info_subject).data
-    return Response
-
-
-@api_view(['DELETE'])
-def delete_subject_serialized(request, info_subject_id):
-    info_subject = get_information_subject_by_id(info_subject_id)
-    if not info_subject:
-        return Response({'error': 'InformationSubject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    deleted_info_subject = info_subject
-    info_subject.delete()
-    serialized_info_subject = InformationSubjectSerializer(deleted_info_subject).data
-    return Response
-
-
-@api_view(['DELETE'])
-def delete_file_serialized(request, file_id):
-    file = get_information_subject_by_id(file_id)
-    if not file:
-        return Response({'error': 'InformationSubject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    deleted_file = file
-    file.delete()
-    serialized_file = InformationSubjectSerializer(deleted_file).data
-    return Response
-
-
-@api_view(['DELETE'])
-def delete_task_serialized(request, info_subject_id):
-    info_subject = get_information_subject_by_id(info_subject_id)
-    if not info_subject:
-        return Response({'error': 'InformationSubject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    deleted_info_subject = info_subject
-    info_subject.delete()
-    serialized_info_subject = InformationSubjectSerializer(deleted_info_subject).data
-    return Response
-
-
 # GET BY ID
 @api_view(['GET'])
 def get_user_by_id_serialized(request, user_id):
@@ -281,23 +167,6 @@ def get_user_by_id(user_id):
 
 
 @api_view(['GET'])
-def get_information_subject_by_id_serialized(request, info_subject_id):
-    info_subject = get_information_subject_by_id(info_subject_id)
-    if not info_subject:
-        return JsonResponse({'error': 'InformationSubject not found'}, status=404)
-    serialized_info_subject = InformationSubjectSerializer(info_subject).data
-    return JsonResponse(serialized_info_subject)
-
-
-def get_information_subject_by_id(info_subject_id):
-    try:
-        info_subject = InformationSubject.objects.get(id=info_subject_id)
-        return info_subject
-    except InformationSubject.DoesNotExist:
-        return None
-
-
-@api_view(['GET'])
 def get_subject_by_id_serialized(request, subject_id):
     subject = get_subject_by_id(subject_id)
     if not subject:
@@ -313,22 +182,6 @@ def get_subject_by_id(subject_id):
     except Subject.DoesNotExist:
         return None
 
-@api_view(['GET'])
-# GET BY ID
-def get_file_by_id_serialized(request, file_id):
-    file_obj = get_file_by_id(file_id)
-    if not file_obj:
-        return JsonResponse({'error': 'File not found'}, status=404)
-    serialized_file = FileSerializer(file_obj).data
-    return JsonResponse(serialized_file)
-
-
-def get_file_by_id(file_id):
-    try:
-        file_obj = File.objects.get(id=file_id)
-        return file_obj
-    except File.DoesNotExist:
-        return None
 
 @api_view(['GET'])
 def get_task_by_id_serialized(request, task_id):
@@ -345,3 +198,97 @@ def get_task_by_id(task_id):
         return task
     except Task.DoesNotExist:
         return None
+
+
+def is_user_teacher(telegram_id):
+    try:
+        user = Users.objects.get(telegram_id=telegram_id)
+        return user.is_teacher
+    except Users.DoesNotExist:
+        return False
+
+
+def get_user_tg_id(telegram_id):
+    try:
+        user = Users.objects.get(telegram_id=telegram_id)
+        return user.id
+    except Users.DoesNotExist:
+        return None
+
+def get_user_id(telegram_id):
+    try:
+        user = Users.objects.get(telegram_id=telegram_id)
+        return user.id
+    except Users.DoesNotExist:
+        return None
+
+
+def get_group_by_name(group_name):
+    try:
+        group = Group.objects.get(name=group_name)
+        return group
+    except Group.DoesNotExist:
+        return None
+
+
+def get_all_teacher():
+    try:
+        teacher_list = Users.objects.filter(is_teacher=True)
+        serialize_teacher = UsersSerializer(teacher_list, many=True).data
+        return serialize_teacher
+    except Users.DoesNotExist:
+        return None
+
+
+def get_task_from_user(student_id, group_id):
+    try:
+        group_tasks = GroupTask.objects.filter(group_id=group_id)
+        task_list = []
+
+        # Получаем содержимое в таблице Task по каждому task_id
+        for group_task in group_tasks:
+            task_id = group_task.task_id
+            task_content = Task.objects.get(id=task_id)
+            task_list.append(task_content)
+            print(f"Task ID: {task_content.id}, Title: {task_content.title}, Description: {task_content.description}")
+
+        return task_list
+    except Task.DoesNotExist:
+        return None
+
+def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id):
+    # Задаем фиксированную дату
+    startDL = datetime.strptime(startDL, "%d-%m-%Y")
+    stopDL = datetime.strptime(stopDL, "%d-%m-%Y")
+
+    # Получаем текущее время
+    current_time = datetime.now().time()
+
+    # Создаем новый объект datetime с фиксированной датой и текущим временем
+    combined_startDL = datetime.combine(startDL.date(), current_time)
+    combined_stopDL = datetime.combine(stopDL.date(), current_time)
+
+    # Извлекаем время из объединенного объекта datetime
+    start_deadline = combined_startDL.time()
+    stop_deadline = combined_stopDL.time()
+    existing_group = Group.objects.get(name=group)
+    # Create a new task instance
+
+    new_task = Task(
+        title=title,
+        description=description,
+        file_name=file_name,
+        file_byte=bytes(file_task_bytes),
+        teacher_id=user_id
+    )
+
+    new_task.save()
+
+    new_group_task = GroupTask(
+        task=new_task,
+        group=existing_group,
+        start_deadline=start_deadline,  # Replace with the actual start deadline
+        stop_deadline=stop_deadline  # Replace with the actual stop deadline
+    )
+
+    new_group_task.save()

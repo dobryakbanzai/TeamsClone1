@@ -38,7 +38,9 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'teamsClone.apps.TeamscloneConfig',
-    'rest_framework'
+    'rest_framework',
+    'telegram_django_bot',
+    'telegram_bot',
 ]
 
 MIDDLEWARE = [

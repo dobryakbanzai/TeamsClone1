@@ -5,46 +5,65 @@ from django.db import models
 # чтобы создать в бд таблицы в консоль вводим
 # python manage.py makemigrations
 # python manage.py migrate
+
+
 class Users(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
     login = models.CharField(max_length=255)
-    email = models.CharField(max_length=255)
-    point = models.IntegerField(null=True)
+    password = models.CharField(max_length=255)
+    telegram_id = models.CharField(max_length=255, null=True)
     is_teacher = models.BooleanField()
-
-
-class InformationSubject(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    teache_id = models.BigIntegerField()
-    url_online_education = models.CharField(max_length=255)
-
-    def __str__(self):
-        return f"{self.id}-{self.teache_id}"
+    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True)
 
 
 class Subject(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)
-    teacher_id = models.BigIntegerField()
-
-    def __str__(self):
-        return self.name
 
 
-class File(models.Model):
-    id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=255)
-    file = models.CharField(max_length=255)
+class SubjectGroup(models.Model):
+    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True)
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE, null=True)
+    url_online_education = models.CharField(max_length=255, null=True)
 
-    def __str__(self):
-        return self.name
+
+class SubjectTeacher(models.Model):
+    teacher = models.ForeignKey('Users', on_delete=models.CASCADE)
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE, null=True)
 
 
 class Task(models.Model):
     id = models.BigAutoField(primary_key=True)
-    name = models.CharField(max_length=255)
+    title = models.CharField(max_length=255)
     description = models.CharField(max_length=255)
+    file_name = models.CharField(max_length=255, null=True)
+    file_byte = models.BinaryField(null=True)
+    teacher = models.ForeignKey('Users', on_delete=models.CASCADE, null=True)
+    subject = models.ForeignKey('Subject', on_delete=models.CASCADE, null=True)
 
-    def __str__(self):
-        return self.name
+
+class Homework(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    student = models.ForeignKey('Users', on_delete=models.CASCADE)
+    title = models.CharField(max_length=255, null=True)
+    work = models.CharField(max_length=255)
+    task = models.ForeignKey('Task', on_delete=models.CASCADE, null=True)
+    file_name = models.CharField(max_length=255, null=True)
+    file_byte = models.BinaryField(null=True)
+    is_verified = models.BooleanField()
+    time_delivery = models.TimeField()
+
+
+
+class Group(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    name = models.CharField(max_length=255)
+
+
+class GroupTask(models.Model):
+    id = models.BigAutoField(primary_key=True)
+    task = models.ForeignKey('Task', on_delete=models.CASCADE)
+    group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True)
+    start_deadline = models.TimeField()
+    stop_deadline = models.TimeField()
