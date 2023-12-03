@@ -15,6 +15,7 @@
       align-items: center;
       justify-content: center;
     }
+
     .group-list {
       background-color: #5EBEC4;
       border-radius: 10px;
@@ -59,11 +60,13 @@
 </head>
 <body>
   <div class="container">
+    <div class="col">
     <div class="row">
       <div class="col-md-6">
         <div class="text-center">
           <h1>TeamsClone</h1>
-          <h5>Teams task manager clone</h5>
+          <h5>Главная страница</h5>
+          <h6>Отображение всех ваших групп</h6>
         </div>
       </div>
       <div class="col-md-6">
@@ -71,23 +74,33 @@
           <h1>Список групп</h1>
           <ul>
             {% for group in groups %}
-              <li><a href="#" class="group-link">{{ group }}</a></li>
+              <li><a href="/grouppage/" class="group-link">{{ group.num }}   |    {{ group.name }}</a></li>
             {% endfor %}
           </ul>
           <div class="col-md-6">
-
-              <form action="/logout/" method="post">
-                    {% csrf_token %}
-                     <input id="logout-button" class="btn btn-danger logout-button" type="submit" value="Выход">
-              </form>
-              <a href="/add-group/" class="btn btn-primary add-group-button">Добавить новую группу</a>
-
+{#            <div class="col-md-6 ">#}
+                <button class="btn btn-primary" style="width: 100%;">Добавить новую группу</button>
+{#            </div>#}
           </div>
-
         </div>
       </div>
     </div>
+    <div class="row" id = "second">
+        <div class="col-md-6 offset-md-3">
+            <div class="row">
+                <form action="/logout/" method="post" >
+                <div class="col">
+                    {% csrf_token %}
+                    <input id="logout-button" class="btn btn-danger logout-button" style="width: 100%;" type="submit" value="Выход">
+                </div>
+            </form>
+            </div>
+
+
+        </div>
+    </div>
   </div>
+</div>
 
   <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
   <script>

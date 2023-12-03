@@ -25,4 +25,5 @@ urlpatterns = [
     path("reg/", views.sign_up),
     path("mainpage/", views.all_groups),
     path('logout/', views.exit_from_sys, name='logout'),
+    path("grouppage/", views.group_page),
 ]
