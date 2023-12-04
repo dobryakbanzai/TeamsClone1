@@ -16,8 +16,14 @@ Including another URLconf
 """
 from django.urls import path
 from django.urls import include, path
+from . import views
 
 urlpatterns = [
     # path("admin/", admin.site.urls),
-    path("", include("teamsClone.urls")),
+    path("restfuncs/", include("teamsClone.urls")),
+    path("", views.sign_in),
+    path("reg/", views.sign_up),
+    path("mainpage/", views.all_groups),
+    path('logout/', views.exit_from_sys, name='logout'),
+    path("grouppage/", views.group_page),
 ]

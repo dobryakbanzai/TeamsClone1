@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список групп</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .group-list {
+      background-color: #5EBEC4;
+      border-radius: 10px;
+      padding: 20px;
+      color: #fff;
+      transition: background-color 0.3s ease;
+    }
+    .group-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .group-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .group-list li {
+      margin-bottom: 10px;
+    }
+    .group-list a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .group-list a:hover {
+      background-color: #fff;
+      color: #5EBEC4;
+    }
+    .logout-button {
+      float: right;
+      margin-top: -40px;
+    }
+    {#.add-group-button {#}
+    {#  float: right;#}
+    {#  margin-top: -40px;#}
+    {#  margin-right: 10px;#}
+    {#}#}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="text-center">
+          <h1>TeamsClone</h1>
+          <h5>Главная страница</h5>
+          <h6>Отображение всех ваших групп</h6>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="group-list">
+          <h1>Список групп</h1>
+          <ul>
+            {% for group in groups %}
+              <li><a href="/grouppage/" class="group-link">{{ group.num }}   |    {{ group.name }}</a></li>
+            {% endfor %}
+          </ul>
+          <div class="col-md-6">
+{#            <div class="col-md-6 ">#}
+                <button class="btn btn-primary" style="width: 100%;">Добавить новую группу</button>
+{#            </div>#}
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="row" id = "second">
+        <div class="col-md-6 offset-md-3">
+            <div class="row">
+                <form action="/logout/" method="post" >
+                <div class="col">
+                    {% csrf_token %}
+                    <input id="logout-button" class="btn btn-danger logout-button" style="width: 100%;" type="submit" value="Выход">
+                </div>
+            </form>
+            </div>
+
+
+        </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      $('#logout-button').click(function() {
+        $.ajax({
+          url: '/logout/',
+          headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+          type: 'POST',
+          success: function(response) {
+            window.location.href = '/';
+          },
+          error: function(error) {
+            console.log(error);
+          }
+        });
+      });
+    });
+  </script>
+</body>
+</html>
