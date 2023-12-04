@@ -1,4 +1,4 @@
-from .models import Subject, Task, Users, Group, GroupTask
+from .models import Subject, Task, Users, Group, GroupTask, Homework
 from .serializers import UsersSerializer, SubjectSerializer, \
     TaskSerializer, GroupNameSerializer
 from rest_framework import status
@@ -8,6 +8,7 @@ from django.http import JsonResponse
 from django.db.models import Q
 
 from datetime import datetime, time
+from django.utils import timezone
 
 
 # SERIALIZERS
@@ -215,6 +216,7 @@ def get_user_tg_id(telegram_id):
     except Users.DoesNotExist:
         return None
 
+
 def get_user_id(telegram_id):
     try:
         user = Users.objects.get(telegram_id=telegram_id)
@@ -240,21 +242,36 @@ def get_all_teacher():
         return None
 
 
-def get_task_from_user(student_id, group_id):
+def get_subject(subject_id):
     try:
+        subject = Subject.objects.filter(id=subject_id)
+        serialize_subject = SubjectSerializer(subject, many=True).data
+        return serialize_subject
+    except Subject.DoesNotExist:
+        return None
+
+
+def get_task_from_user(student_id, group_id, teacher_id):
+    try:
+        current_time = timezone.now().time()  # Получаем текущее время как объект datetime.time()
         group_tasks = GroupTask.objects.filter(group_id=group_id)
         task_list = []
 
         # Получаем содержимое в таблице Task по каждому task_id
         for group_task in group_tasks:
             task_id = group_task.task_id
-            task_content = Task.objects.get(id=task_id)
-            task_list.append(task_content)
-            print(f"Task ID: {task_content.id}, Title: {task_content.title}, Description: {task_content.description}")
+            task_content = Task.objects.filter(id=task_id, teacher_id=teacher_id).first()
+
+            if task_content:
+                # Преобразуем stop_deadline в объект datetime для сравнения
+                stop_deadline_datetime = timezone.datetime.combine(timezone.now(), group_task.stop_deadline)
+                if current_time < stop_deadline_datetime.time():
+                    task_list.append(task_content)
 
         return task_list
     except Task.DoesNotExist:
         return None
+
 
 def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id):
     # Задаем фиксированную дату
@@ -292,3 +309,31 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
     )
 
     new_group_task.save()
+
+
+def add_homework_in_db(student_id, title, description, task_id,  file_name, file_byte):
+    try:
+        # Получение GroupTask по task_id
+        group_task = GroupTask.objects.get(task_id=task_id)
+    except GroupTask.DoesNotExist:
+        raise ValueError("Задание не найдено в GroupTask")
+
+    # Проверка, что время сдачи не позже столбца 'stop_deadline' у задания в GroupTask
+    current_time = datetime.now().time()
+
+    # if current_time < group_task.start_deadline or current_time > group_task.stop_deadline:
+    #     raise ValueError("Время сдачи находится вне разрешенного диапазона")
+
+    # Создание нового домашнего задания
+    homework = Homework.objects.create(
+        student_id=student_id,
+        title=title,
+        description=description,
+        task_id=task_id,
+        file_name=file_name,
+        file_byte=file_byte,
+        is_verified=None,
+        time_delivery=datetime.now().time()
+    )
+
+    return homework

@@ -47,11 +47,11 @@ class Homework(models.Model):
     id = models.BigAutoField(primary_key=True)
     student = models.ForeignKey('Users', on_delete=models.CASCADE)
     title = models.CharField(max_length=255, null=True)
-    work = models.CharField(max_length=255)
+    description = models.CharField(max_length=255)
     task = models.ForeignKey('Task', on_delete=models.CASCADE, null=True)
     file_name = models.CharField(max_length=255, null=True)
     file_byte = models.BinaryField(null=True)
-    is_verified = models.BooleanField()
+    is_verified = models.BooleanField(null=True)
     time_delivery = models.TimeField()
 
 
