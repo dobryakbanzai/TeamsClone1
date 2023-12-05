@@ -1,4 +1,4 @@
-from .models import Subject, Task, Users, Group, GroupTask, Homework
+from .models import Subject, Task, Users, Group, GroupTask, Homework, SubjectGroup, SubjectTeacher
 from .serializers import UsersSerializer, SubjectSerializer, \
     TaskSerializer, GroupNameSerializer
 from rest_framework import status
@@ -275,19 +275,10 @@ def get_task_from_user(student_id, group_id, teacher_id):
 
 def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id):
     # Задаем фиксированную дату
-    startDL = datetime.strptime(startDL, "%d-%m-%Y")
-    stopDL = datetime.strptime(stopDL, "%d-%m-%Y")
+    start = datetime.strptime(startDL, "%d-%m-%Y").date()
+    stop = datetime.strptime(stopDL, "%d-%m-%Y").date()
 
-    # Получаем текущее время
-    current_time = datetime.now().time()
 
-    # Создаем новый объект datetime с фиксированной датой и текущим временем
-    combined_startDL = datetime.combine(startDL.date(), current_time)
-    combined_stopDL = datetime.combine(stopDL.date(), current_time)
-
-    # Извлекаем время из объединенного объекта datetime
-    start_deadline = combined_startDL.time()
-    stop_deadline = combined_stopDL.time()
     existing_group = Group.objects.get(name=group)
     # Create a new task instance
 
@@ -304,8 +295,8 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
     new_group_task = GroupTask(
         task=new_task,
         group=existing_group,
-        start_deadline=start_deadline,  # Replace with the actual start deadline
-        stop_deadline=stop_deadline  # Replace with the actual stop deadline
+        start_deadline=start,  # Replace with the actual start deadline
+        stop_deadline=stop  # Replace with the actual stop deadline
     )
 
     new_group_task.save()
@@ -337,3 +328,83 @@ def add_homework_in_db(student_id, title, description, task_id,  file_name, file
     )
 
     return homework
+
+from django.core.exceptions import ObjectDoesNotExist
+
+def create_user_with_checks(name, login, password, telegram_id, is_teacher, group_name, subject_name, teacher_name):
+    try:
+        # Проверка существования группы
+        group = Group.objects.get(name=group_name)
+
+        # Проверка существования пользователя (преподавателя)
+        if is_teacher:
+            teacher = Users.objects.get(name=teacher_name, is_teacher=True)
+        else:
+            teacher = None
+
+        # Проверка существования предмета
+        subject = Subject.objects.get(name=subject_name)
+
+        # Создание пользователя
+        user = Users.objects.create(
+            name=name,
+            login=login,
+            password=password,
+            telegram_id=telegram_id,
+            is_teacher=is_teacher,
+            group=group
+        )
+
+        # Если пользователь - студент, связываем его с предметом
+        if not is_teacher:
+            SubjectGroup.objects.create(
+                group=group,
+                subject=subject,
+                url_online_education=None  # Здесь вы можете указать ссылку на онлайн-обучение, если это необходимо
+            )
+
+        return user
+
+    except ObjectDoesNotExist as e:
+        print(f"Error: {e}")
+        return None
+
+def group_exists(group_name):
+    try:
+        Group.objects.get(name=group_name)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+def subject_exists(subject_name):
+    try:
+        Subject.objects.get(name=subject_name)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+def teacher_exists_for_subject(teacher_name, teacher_login, subject_name):
+    try:
+        teacher = Users.objects.get(name=teacher_name, login=teacher_login, is_teacher=True)
+        subject = Subject.objects.get(name=subject_name)
+        SubjectTeacher.objects.get(teacher=teacher, subject=subject)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+def get_teacher_id_by_name_and_subject(teacher_name, subject_name):
+    try:
+        teacher_id = SubjectTeacher.objects.filter(
+            teacher__name=teacher_name,
+            subject__name=subject_name
+        ).values_list('teacher__id', flat=True).first()
+
+        if teacher_id:
+            return teacher_id
+        else:
+            print(f"Teacher '{teacher_name}' for subject '{subject_name}' not found.")
+            return None
+
+    except ObjectDoesNotExist as e:
+        print(f"Error: {e}")
+        return None

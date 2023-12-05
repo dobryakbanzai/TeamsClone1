@@ -52,7 +52,7 @@ class Homework(models.Model):
     file_name = models.CharField(max_length=255, null=True)
     file_byte = models.BinaryField(null=True)
     is_verified = models.BooleanField(null=True)
-    time_delivery = models.TimeField()
+    time_delivery = models.DateField()
 
 
 
@@ -65,5 +65,5 @@ class GroupTask(models.Model):
     id = models.BigAutoField(primary_key=True)
     task = models.ForeignKey('Task', on_delete=models.CASCADE)
     group = models.ForeignKey('Group', on_delete=models.CASCADE, null=True)
-    start_deadline = models.TimeField()
-    stop_deadline = models.TimeField()
+    start_deadline = models.DateField()
+    stop_deadline = models.DateField()
