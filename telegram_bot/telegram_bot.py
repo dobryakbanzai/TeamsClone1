@@ -28,6 +28,112 @@ teacher_name = None
 task = None
 time_delivery = None
 
+# create_student
+user_name = None
+login = None
+password = None
+group_name = None
+subject_name = None
+teacher_name = None
+
+
+@bot.message_handler(commands=['createUser'])
+def create_student(message):
+    if user_name is None:
+        bot.send_message(message.chat.id, 'Введите Ваше имя.')
+        states[message.chat.id] = "get_name"
+    elif login is None:
+        bot.send_message(message.chat.id, 'Введите Ваш login.')
+        states[message.chat.id] = "get_login"
+    elif password is None:
+        bot.send_message(message.chat.id, 'Введите Ваш password.')
+        states[message.chat.id] = "get_password"
+    elif group_name is None:
+        bot.send_message(message.chat.id, 'Введите Ваш group_name.')
+        states[message.chat.id] = "get_group_name"
+    elif subject_name is None:
+        bot.send_message(message.chat.id, 'Введите Ваш subject_name.')
+        states[message.chat.id] = "get_subject_name"
+    elif teacher_name is None:
+        bot.send_message(message.chat.id, 'Введите ФИО Вашего преподавателя')
+        states[message.chat.id] = "get_teacher_name"
+
+    if (user_name is not None and login is not None and password is not None and group_name is not None
+            and subject_name) is not None and teacher_name is not None:
+        user = create_user_with_checks(
+            user_name,
+            login,
+            password,
+            message.from_user.id,
+            False,
+            group_name,
+            subject_name
+        )
+        if user:
+            bot.send_message(message.chat.id, 'Пользователь создан.')
+        else:
+            bot.send_message(message.chat.id, 'Ошибка при создании пользователя.')
+            create_student(message)
+
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_name", content_types=['text'])
+def get_name(message):
+    global user_name
+    user_name = message.text
+    states[message.chat.id] = None
+    create_student(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_login", content_types=['text'])
+def get_name(message):
+    global login
+    login = message.text
+    states[message.chat.id] = None
+    create_student(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_password", content_types=['text'])
+def get_name(message):
+    global password
+    password = message.text
+    states[message.chat.id] = None
+    create_student(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_group_name", content_types=['text'])
+def get_name(message):
+    global group_name
+    group_name = message.text
+    if not group_exists(group_name):
+        bot.send_message(message.chat.id, 'Такая группа не существует!')
+    else:
+        states[message.chat.id] = None
+        create_student(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_subject_name", content_types=['text'])
+def get_name(message):
+    global subject_name
+    subject_name = message.text
+    if not subject_exists(subject_name):
+        bot.send_message(message.chat.id, 'Такого предмета не существует!')
+    else:
+        states[message.chat.id] = None
+        create_student(message)
+
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_teacher_name", content_types=['text'])
+def get_teacher_name(message):
+    global teacher_name
+    teacher_name = message.text
+    if not subject_exists(teacher_name):
+        bot.send_message(message.chat.id, 'Такого предмета не существует!')
+    else:
+        states[message.chat.id] = None
+        create_student(message)
+
 
 @bot.message_handler(commands=['addHomeWork'])
 def add_homework(message):
@@ -249,7 +355,7 @@ def input_group(message):
     global stopDL, states
     stopDL = message.text.lower()
     if check_date_format(stopDL):
-        bot.send_message(message.chat.id, text="Дата добавлена")
+        bot.send_message(message.chat.id, text=f"Дата окончания дедлайна {stopDL} добавлена")
         states[message.chat.id] = None
         create_home_work(message)
     else:
@@ -266,7 +372,7 @@ def input_group(message):
     global startDL, states
     startDL = message.text.lower()
     if check_date_format(startDL):
-        bot.send_message(message.chat.id, text="Дата добавлена")
+        bot.send_message(message.chat.id, text=f"Дата начала дедлайна {startDL} добавлена")
         states[message.chat.id] = None
         create_home_work(message)
     else:
@@ -356,7 +462,6 @@ def start(message):
 
 @bot.message_handler(content_types=['text'])
 def func(message):
-
     # Добавление заявки
 
     if message.text == "❓ Информация о боте":
@@ -377,6 +482,7 @@ def func(message):
                               "/addHomeWork Прикрепить домашнее задание \n"
                               "/checkInfHomeWork Просмотр информации по предмету \n"
                               "/checkCurrentDeadline Просмотр актуальных дедлайнов", reply_markup=markup)
+
 
 def start_bot():
     # bot.polling(none_stop=True)
