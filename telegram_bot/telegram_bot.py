@@ -22,11 +22,14 @@ states = {}
 date_pattern = re.compile(r'^\d{2}-\d{2}-\d{4}$')
 
 # student
+user_id = None
+group_id = None
 task_id = None
 teacher_id = None
 teacher_name = None
 task = None
 time_delivery = None
+subject = None
 
 # create_student
 user_name = None
@@ -37,8 +40,85 @@ subject_name = None
 teacher_name = None
 
 
+@bot.message_handler(commands=['getSentHomeworkAssignments'])
+def get_sent_homework_assignments(message):
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+    homework_list = Homework.objects.filter(student=user)
+    result_string = ""
+    for homework in homework_list:
+        result_string += f"Заголовок: {homework.title}\n"
+        result_string += f"Описание: {homework.description}\n"
+        result_string += f"Задание: {homework.task.title}\n"  # Предполагается, что задание также имеет поле 'title'
+        result_string += f"Время сдачи: {homework.time_delivery}\n"
+
+        result_string += f"Преподаватель: {homework.task.teacher.name}\n"  # Предполагается, что модель Task имеет поле 'teacher'
+        result_string += f"Предмет: {homework.task.subject.name}\n"  # Предполагается, что модель Task имеет поле 'subject'
+
+        result_string += f"Задание: {homework.task.title}\n"
+        result_string += f"Время сдачи: {homework.time_delivery}\n"
+        result_string += "\n"
+
+        bot.send_message(message.chat.id, text=result_string)
+        if homework.file_name is not None:
+            file_byte_io = BytesIO(homework.file_byte)
+            file_byte_io.name = homework.file_name
+            bot.send_document(message.chat.id, file_byte_io)
+
+
+@bot.message_handler(commands=['getVerifiedHomeworks'])
+def get_verified_homeworks(message):
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+    verified_homeworks = get_verified_homeworks_by_user(user)
+    result_verified = ""
+    for homework in verified_homeworks:
+        # Формируем строку с описанием принятых задач
+        result_verified += f"ID: {homework.id}\n"
+        result_verified += f"Студент: {homework.student.name}\n"
+        result_verified += f"Заголовок: {homework.title}\n"
+        result_verified += f"Описание: {homework.description}\n"
+        result_verified += f"Задание: {homework.task.title}\n"
+        result_verified += f"Файл: {homework.file_name}\n"
+        result_verified += f"Проверено: Да\n" if homework.is_verified else "Проверено: Нет\n"
+        result_verified += f"Срок сдачи: {homework.time_delivery}\n"
+        result_verified += "\n"
+
+        bot.send_message(message.chat.id, text=result_verified)
+        if homework.file_name is not None:
+            file_byte_io = BytesIO(homework.file_byte)
+            file_byte_io.name = homework.file_name
+            bot.send_document(message.chat.id, file_byte_io)
+
+
+@bot.message_handler(commands=['getUnverifiedHomeworks'])
+def get_unverified_homeworks(message):
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+    unverified_homeworks = get_unverified_homeworks_by_user(user)
+    result_unverified = ""
+    for homework in unverified_homeworks:
+        # Формируем строку с описанием принятых задач
+        result_unverified += f"ID: {homework.id}\n"
+        result_unverified += f"Студент: {homework.student.name}\n"
+        result_unverified += f"Заголовок: {homework.title}\n"
+        result_unverified += f"Описание: {homework.description}\n"
+        result_unverified += f"Задание: {homework.task.title}\n"
+        result_unverified += f"Файл: {homework.file_name}\n"
+        result_unverified += f"Проверено: Да\n" if homework.is_verified else "Проверено: Нет\n"
+        result_unverified += f"Срок сдачи: {homework.time_delivery}\n"
+        result_unverified += "\n"
+
+        bot.send_message(message.chat.id, text=result_unverified)
+        if homework.file_name is not None:
+            file_byte_io = BytesIO(homework.file_byte)
+            file_byte_io.name = homework.file_name
+            bot.send_document(message.chat.id, file_byte_io)
+
+
 @bot.message_handler(commands=['createUser'])
 def create_student(message):
+    markup = types.ReplyKeyboardRemove(selective=False)
     if user_name is None:
         bot.send_message(message.chat.id, 'Введите Ваше имя.')
         states[message.chat.id] = "get_name"
@@ -59,7 +139,7 @@ def create_student(message):
         states[message.chat.id] = "get_teacher_name"
 
     if (user_name is not None and login is not None and password is not None and group_name is not None
-            and subject_name) is not None and teacher_name is not None:
+        and subject_name) is not None and teacher_name is not None:
         user = create_user_with_checks(
             user_name,
             login,
@@ -71,10 +151,12 @@ def create_student(message):
         )
         if user:
             bot.send_message(message.chat.id, 'Пользователь создан.')
+            states[message.chat.id] = None
+            start(message)
+
         else:
             bot.send_message(message.chat.id, 'Ошибка при создании пользователя.')
             create_student(message)
-
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_name", content_types=['text'])
@@ -86,7 +168,7 @@ def get_name(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_login", content_types=['text'])
-def get_name(message):
+def get_login(message):
     global login
     login = message.text
     states[message.chat.id] = None
@@ -123,7 +205,6 @@ def get_name(message):
         create_student(message)
 
 
-
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_teacher_name", content_types=['text'])
 def get_teacher_name(message):
     global teacher_name
@@ -135,15 +216,45 @@ def get_teacher_name(message):
         create_student(message)
 
 
-@bot.message_handler(commands=['addHomeWork'])
-def add_homework(message):
-    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, time_delivery, task_id, teacher_id, teacher_name, task, time_delivery
-
-    user_tg_id = message.from_user.id
-    user = get_user_tg_id(user_tg_id)
+@bot.message_handler(commands=['checkCurrentDeadline'])
+def check_actual_homework(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    if teacher_id is None:  # +
+    user_tg_id = message.from_user.id
+    # user = get_user_by_tg_id(user_tg_id)
+    task_list = get_actual_tasks_for_group(get_group_id_by_telegram_id(user_tg_id))
+    if task_list:
+        bot.send_message(message.chat.id, text="Актуальные задания:".format(message.from_user), reply_markup=markup)
+        for task_content in task_list:
+            name_subject = get_subject(task_content.subject_id)
+
+            message_text = (
+                f"ID: {task_content.id} \n"
+                f"Заголовок: {task_content.title}\n"
+                f"Описание: {task_content.description}\n"
+                f"Преподаватель: {teacher_name}\n"
+                f"Название предмета: {name_subject}"
+            )
+            bot.send_message(message.chat.id, text=message_text.format(message.from_user), reply_markup=markup)
+            if task_content.file_name is not None:
+                file_byte_io = BytesIO(task_content.file_byte)
+                file_byte_io.name = task_content.file_name
+                bot.send_document(message.chat.id, file_byte_io)
+    else:
+        bot.send_message(message.chat.id, text="У Вас нет актуальных заданий:".format(message.from_user),
+                         reply_markup=markup)
+
+
+@bot.message_handler(commands=['addHomeWork'])
+def add_homework(message):
+    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, \
+        time_delivery, task_id, teacher_id, teacher_name, task, time_delivery
+
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+
+    if teacher_id is None:
         teacher_list = get_all_teacher()
         for name in teacher_list:
             button_text = f"{name.get('id')}: {name.get('name')}"
@@ -153,7 +264,8 @@ def add_homework(message):
                          reply_markup=markup)
         states[message.chat.id] = "get_teacher"
     elif task is None:
-        task_list = get_task_from_user(2, 1, teacher_id)
+        markup = types.ReplyKeyboardRemove(selective=False)
+        task_list = get_task_from_user(user.id, user.group_id, teacher_id)
         for task_content in task_list:
             name_subject = get_subject(task_content.subject_id)
 
@@ -176,6 +288,7 @@ def add_homework(message):
         states[message.chat.id] = "get_task"
         # print(get_task_from_user)
     elif title is None:
+        markup = types.ReplyKeyboardRemove(selective=False)
         bot.send_message(message.chat.id, 'Напишите заголовок для задания')
         states[message.chat.id] = "title_homework"
     elif description is None:
@@ -189,9 +302,9 @@ def add_homework(message):
         bot.send_message(message.chat.id, text="Вы хотите отправить файл?", reply_markup=markup)
 
         states[message.chat.id] = "file_task_homework"
-
     if (file_task is not None and teacher_id is not None and task is not None and title is not None
             and description is not None and file_task is not None):
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         add_homework_in_db(
             user,
             title,
@@ -200,7 +313,7 @@ def add_homework(message):
             file_name,
             file_task_bytes
         )
-        bot.send_message(message.chat.id, text="Домашнее задание добавлена", reply_markup=markup)
+        bot.send_message(message.chat.id, text="Домашнее задание добавлено", reply_markup=markup)
         title = None
         description = None
         file_task_bytes = []
@@ -211,6 +324,9 @@ def add_homework(message):
         teacher_name = None
         task = None
         time_delivery = None
+
+        states[message.chat.id] = None
+        start(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_task", content_types=['text'])
@@ -239,19 +355,18 @@ def input_group(message):
 
 @bot.message_handler(commands=['createHomeWork'])
 def create_home_work(message):
-    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task
+    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, user_id, group_id
     # Make sure 'states' is defined somewhere in your code
-
     user_tg_id = message.from_user.id
-    markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-
+    user_id = get_user_tg_id(user_tg_id)
     if not is_user_teacher(user_tg_id):
         bot.send_message(message.chat.id,
-                         'У Вас нет прав для этой функции. Запросите добавление Вашего аккаунта у деканата!')
+                         'У Вас нет прав для этой функции.')
         start(message)
         return
 
     if group is None:
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         groups = get_unique_groups()
         for name in groups:
             button_text = name.get('name')
@@ -260,8 +375,21 @@ def create_home_work(message):
                          text="Выберите из списка группу или введите сами".format(message.from_user),
                          reply_markup=markup)
         states[message.chat.id] = "group"
+    elif subject is None:
+        group_id = get_group_id_by_name(group)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        subjects = get_subjects_by_teacher_and_group(user_id, group_id)
+
+        for name in subjects:
+            button_text = name.name
+            markup.add(types.KeyboardButton(button_text))
+        bot.send_message(message.chat.id,
+                         text="Выберите из списка Ваш предмет".format(message.from_user),
+                         reply_markup=markup)
+        states[message.chat.id] = "subject"
     elif title is None:
-        bot.send_message(message.chat.id, 'Напишите заголовок для задания')
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
         states[message.chat.id] = "title"
     elif description is None:
         bot.send_message(message.chat.id, 'Напишите описание для задания')
@@ -280,11 +408,10 @@ def create_home_work(message):
         bot.send_message(message.chat.id, text="Вы хотите отправить файл?", reply_markup=markup)
 
         states[message.chat.id] = "file_task"
-
     if file_task is not None and stopDL is not None and startDL is not None and title is not None and group is not None:
-        user_id = get_user_tg_id(user_tg_id)
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         add_task(
-            user_tg_id,
+            user_id,
             group,
             title,
             description,
@@ -292,7 +419,8 @@ def create_home_work(message):
             stopDL,
             file_task_bytes,
             file_name,
-            user_id
+            user_id,
+            subject
         )
         bot.send_message(message.chat.id, text="Домашнее задание добавлена", reply_markup=markup)
         group = None
@@ -303,13 +431,14 @@ def create_home_work(message):
         file_task_bytes = []
         file_name = None
         file_task = None
+        states[message.chat.id] = None
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task", content_types=['text'])
 def check_file(message):
     global file_task
     if message.text.lower() == "да":
-        bot.send_message(message.chat.id, text="Прикрепите файл")
+        bot.send_message(message.chat.id, text="Прикрепите zip файл")
         states[message.chat.id] = "file_task"
     else:
         states[message.chat.id] = None
@@ -321,7 +450,7 @@ def check_file(message):
 def check_file(message):
     global file_task
     if message.text.lower() == "да":
-        bot.send_message(message.chat.id, text="Прикрепите файл")
+        bot.send_message(message.chat.id, text="Прикрепите zip файл")
         states[message.chat.id] = "file_task_homework"
     else:
         states[message.chat.id] = None
@@ -446,6 +575,21 @@ def input_group(message):
         bot.send_message(message.chat.id, 'Такой группы не существует. Введите повторно')
 
 
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "subject", content_types=['text'])
+def input_group(message):
+    global subject, states
+    subjects = get_subjects_by_teacher_and_group(user_id, group_id)
+    subject = message.text
+    print(subject)
+    if any(subject in x.name for x in subjects):
+        bot.send_message(message.chat.id, f'Выбран предмет: {subject}')
+        # Завершаем состояние
+        states[message.chat.id] = None
+        create_home_work(message)
+    else:
+        bot.send_message(message.chat.id, 'Такого предмета не существует. Введите повторно')
+
+
 # Начало работы
 @bot.message_handler(commands=['start'])
 def start(message):
@@ -471,17 +615,31 @@ def func(message):
         bot.send_message(message.chat.id, text="Данный бот создан, чтобы помочь преподавателям "
                                                "принимать домашние задания студентов",
                          reply_markup=markup)  # информация о боте
+    elif message.text == "Назад":
+        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        btn2 = types.KeyboardButton("❓ Информация о боте")
+        btn3 = types.KeyboardButton("Команды")
+        markup.add(btn2, btn3)
+
+        bot.send_message(message.chat.id,
+                         text="Вас приветствует бот помощник по сдаче и добавлению домашних заданий".format(
+                             message.from_user), reply_markup=markup)
     elif message.text == "Команды":
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         back = types.KeyboardButton("Назад")
         markup.add(back)
         bot.send_message(message.chat.id,
-                         text="Если вы преподаватель подайте заявку на добавление вашего Telegrem аккаунта в базу данных. "
-                              "Тогда вы сможете добавлять домашние задания через бота с помощью команды /createHomeWork \n"
+                         text="Если вы преподаватель подайте заявку на добавление вашего Telegrem аккаунта в базу данных."
+                              "Тогда вы сможете добавлять домашние задания через бота с помощью команды \n"
+                              "/createHomeWork \n"
                               "Для студентов доступно: \n"
                               "/addHomeWork Прикрепить домашнее задание \n"
-                              "/checkInfHomeWork Просмотр информации по предмету \n"
-                              "/checkCurrentDeadline Просмотр актуальных дедлайнов", reply_markup=markup)
+                              "/checkCurrentDeadline Просмотр информации по предмету \n"
+                              "/createUser Просмотр актуальных дедлайнов \n"
+                              "/getUnverifiedHomeworks Просмотр  не принятых заданий \n"
+                              "/getVerifiedHomeworks Просмотр принятых заданий \n"
+                              "/createUser Создать студента"
+                         , reply_markup=markup)
 
 
 def start_bot():
