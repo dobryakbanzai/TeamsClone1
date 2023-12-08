@@ -528,7 +528,7 @@ def check_file(message):
     else:
         states[message.chat.id] = None
         file_task = "-"
-        create_home_work(message)
+        create_homework(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task_homework", content_types=['text'])
@@ -550,7 +550,7 @@ def handle_document(message):
     file_task_bytes = bot.download_file(file_info.file_path)
     file_name = message.document.file_name
     file_task = "-"
-    create_home_work(message)
+    create_homework(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task_homework",
@@ -571,7 +571,7 @@ def input_stopDL(message):
     if check_date_format(stopDL):
         bot.send_message(message.chat.id, text=f"Дата окончания дедлайна {stopDL} добавлена")
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         bot.send_message(message.chat.id, 'Дата написана в неверном формате')
 
@@ -587,7 +587,7 @@ def input_startDL(message):
     if check_date_format(startDL):
         bot.send_message(message.chat.id, text=f"Дата начала дедлайна {startDL} добавлена")
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         bot.send_message(message.chat.id, 'Дата написана в неверном формате')
 
@@ -612,7 +612,7 @@ def input_title(message):
     if title is not None and title.strip() != "":
         bot.send_message(message.chat.id, text="Заголовок добавлен")
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         # ошибку можно прокинуть свою
         bot.send_message(message.chat.id, 'Строка пустая или добавлена')
@@ -625,7 +625,7 @@ def input_description(message):
     if description is not None and description.strip() != "":
         bot.send_message(message.chat.id, text="Описание добавлен")
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         bot.send_message(message.chat.id, 'Строка пустая или добавлена')
 
@@ -652,7 +652,7 @@ def input_group(message):
         bot.send_message(message.chat.id, f'Выбрана группа: {group}')
         # Завершаем состояние
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         bot.send_message(message.chat.id, 'Такой группы не существует. Введите повторно')
 
@@ -673,7 +673,7 @@ def input_subject(message):
         subject_id = subject_obj.id
         # Завершаем состояние
         states[message.chat.id] = None
-        create_home_work(message)
+        create_homework(message)
     else:
         bot.send_message(message.chat.id, 'Такого предмета не существует. Введите повторно')
 
