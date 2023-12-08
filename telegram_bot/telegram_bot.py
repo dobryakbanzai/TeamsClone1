@@ -1,22 +1,25 @@
-import telebot
-from telebot import types
-from config import *
-from teamsClone.view_web.views import *
-from teamsClone.views import *
 import re
 from io import BytesIO
+
+import telebot
+from telebot import types
+
+from config import *
+from teamsClone.views import *
 
 bot = telebot.TeleBot(TOKEN_BOT)
 
 # teacher
-group = None  # обязательно
-title = None  # обязательно
-description = None  # обязательно
-startDL = None  # обязательно
-stopDL = None  # обязательно
-file_task_bytes = []  # не обязательно
-file_name = None  # не обязательно
+subject = None
+group = None
+title = None
+description = None
+startDL = None
+stopDL = None
+file_task_bytes = []
+file_name = None
 file_task = None
+
 # Состояния чата
 states = {}
 date_pattern = re.compile(r'^\d{2}-\d{2}-\d{4}$')
@@ -29,7 +32,7 @@ teacher_id = None
 teacher_name = None
 task = None
 time_delivery = None
-subject = None
+subject_id = None
 
 # create_student
 user_name = None
@@ -37,79 +40,70 @@ login = None
 password = None
 group_name = None
 subject_name = None
-teacher_name = None
 
 
 @bot.message_handler(commands=['getSentHomeworkAssignments'])
 def get_sent_homework_assignments(message):
     user_tg_id = message.from_user.id
     user = get_user_by_tg_id(user_tg_id)
-    homework_list = Homework.objects.filter(student=user)
-    result_string = ""
-    for homework in homework_list:
-        result_string += f"Заголовок: {homework.title}\n"
-        result_string += f"Описание: {homework.description}\n"
-        result_string += f"Задание: {homework.task.title}\n"  # Предполагается, что задание также имеет поле 'title'
-        result_string += f"Время сдачи: {homework.time_delivery}\n"
-
-        result_string += f"Преподаватель: {homework.task.teacher.name}\n"  # Предполагается, что модель Task имеет поле 'teacher'
-        result_string += f"Предмет: {homework.task.subject.name}\n"  # Предполагается, что модель Task имеет поле 'subject'
-
-        result_string += f"Задание: {homework.task.title}\n"
-        result_string += f"Время сдачи: {homework.time_delivery}\n"
-        result_string += "\n"
-
-        bot.send_message(message.chat.id, text=result_string)
-        if homework.file_name is not None:
-            file_byte_io = BytesIO(homework.file_byte)
-            file_byte_io.name = homework.file_name
-            bot.send_document(message.chat.id, file_byte_io)
+    # homework_list = Homework.objects.filter(student=user)
+    view_homeworks(None, user, message)
+    # result_string = ""
+    # for homework in homework_list:
+    #     result_string += f"Заголовок: {homework.title}\n"
+    #     result_string += f"Описание: {homework.description}\n"
+    #     result_string += f"Задание: {homework.task.title}\n"
+    #     result_string += f"Время сдачи: {homework.time_delivery}\n"
+    #
+    #     result_string += f"Преподаватель: {homework.task.teacher.name}\n"
+    #     result_string += f"Предмет: {homework.task.subject.name}\n"
+    #
+    #     result_string += f"Задание: {homework.task.title}\n"
+    #     result_string += f"Время сдачи: {homework.time_delivery}\n"
+    #     result_string += "\n"
+    #
+    #     bot.send_message(message.chat.id, text=result_string)
+    #     if homework.file_name is not None:
+    #         file_byte_io = BytesIO(homework.file_byte)
+    #         file_byte_io.name = homework.file_name
+    #         bot.send_document(message.chat.id, file_byte_io)
 
 
 @bot.message_handler(commands=['getVerifiedHomeworks'])
 def get_verified_homeworks(message):
     user_tg_id = message.from_user.id
     user = get_user_by_tg_id(user_tg_id)
-    verified_homeworks = get_verified_homeworks_by_user(user)
-    result_verified = ""
-    for homework in verified_homeworks:
-        # Формируем строку с описанием принятых задач
-        result_verified += f"ID: {homework.id}\n"
-        result_verified += f"Студент: {homework.student.name}\n"
-        result_verified += f"Заголовок: {homework.title}\n"
-        result_verified += f"Описание: {homework.description}\n"
-        result_verified += f"Задание: {homework.task.title}\n"
-        result_verified += f"Файл: {homework.file_name}\n"
-        result_verified += f"Проверено: Да\n" if homework.is_verified else "Проверено: Нет\n"
-        result_verified += f"Срок сдачи: {homework.time_delivery}\n"
-        result_verified += "\n"
-
-        bot.send_message(message.chat.id, text=result_verified)
-        if homework.file_name is not None:
-            file_byte_io = BytesIO(homework.file_byte)
-            file_byte_io.name = homework.file_name
-            bot.send_document(message.chat.id, file_byte_io)
+    view_homeworks(True, user, message)
 
 
 @bot.message_handler(commands=['getUnverifiedHomeworks'])
 def get_unverified_homeworks(message):
     user_tg_id = message.from_user.id
     user = get_user_by_tg_id(user_tg_id)
-    unverified_homeworks = get_unverified_homeworks_by_user(user)
-    result_unverified = ""
-    for homework in unverified_homeworks:
-        # Формируем строку с описанием принятых задач
-        result_unverified += f"ID: {homework.id}\n"
-        result_unverified += f"Студент: {homework.student.name}\n"
-        result_unverified += f"Заголовок: {homework.title}\n"
-        result_unverified += f"Описание: {homework.description}\n"
-        result_unverified += f"Задание: {homework.task.title}\n"
-        result_unverified += f"Файл: {homework.file_name}\n"
-        result_unverified += f"Проверено: Да\n" if homework.is_verified else "Проверено: Нет\n"
-        result_unverified += f"Срок сдачи: {homework.time_delivery}\n"
-        result_unverified += "\n"
+    print(False)
+    view_homeworks(False, user, message)
 
-        bot.send_message(message.chat.id, text=result_unverified)
+
+def view_homeworks(is_verified, user, message):
+    if not is_verified is None:
+        homeworks = get_is_verified_homeworks_by_user(user, is_verified)
+    else:
+        homeworks = Homework.objects.filter(student=user)
+    result = ""
+    for homework in homeworks:
+        result += f"Заголовок: {homework.title}\n"
+        result += f"Описание: {homework.description}\n"
+        result += f"Задание: {homework.task.title}\n"
+        result += f"Время сдачи: {homework.time_delivery}\n"
+        result += "\n"
+        result += f"Преподаватель: {homework.task.teacher.name}\n"
+        result += f"Предмет: {homework.task.subject.name}\n"
+        result += "\n"
+        result += f"Задание: {homework.task.title}\n"
+        result += f"Время сдачи: {homework.time_delivery}\n"
+        result += "\n"
+
+        bot.send_message(message.chat.id, text=result)
         if homework.file_name is not None:
             file_byte_io = BytesIO(homework.file_byte)
             file_byte_io.name = homework.file_name
@@ -119,20 +113,27 @@ def get_unverified_homeworks(message):
 @bot.message_handler(commands=['createUser'])
 def create_student(message):
     markup = types.ReplyKeyboardRemove(selective=False)
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+
+    if user:
+        bot.send_message(message.chat.id, 'Вы уже есть в системе, можете свободно пользоваться ботом '
+                                          'в границах своей роли')
+        return
     if user_name is None:
         bot.send_message(message.chat.id, 'Введите Ваше имя.')
         states[message.chat.id] = "get_name"
     elif login is None:
-        bot.send_message(message.chat.id, 'Введите Ваш login.')
+        bot.send_message(message.chat.id, 'Введите Ваш логин.')
         states[message.chat.id] = "get_login"
     elif password is None:
-        bot.send_message(message.chat.id, 'Введите Ваш password.')
+        bot.send_message(message.chat.id, 'Введите Ваш пароль.')
         states[message.chat.id] = "get_password"
     elif group_name is None:
-        bot.send_message(message.chat.id, 'Введите Ваш group_name.')
+        bot.send_message(message.chat.id, 'Введите Вашу группу.')
         states[message.chat.id] = "get_group_name"
     elif subject_name is None:
-        bot.send_message(message.chat.id, 'Введите Ваш subject_name.')
+        bot.send_message(message.chat.id, 'Введите Ваш имя предмета.')
         states[message.chat.id] = "get_subject_name"
     elif teacher_name is None:
         bot.send_message(message.chat.id, 'Введите ФИО Вашего преподавателя')
@@ -144,10 +145,11 @@ def create_student(message):
             user_name,
             login,
             password,
-            message.from_user.id,
+            user_tg_id,
             False,
-            group_name,
-            subject_name
+            group_id,
+            subject_id,
+            teacher_name
         )
         if user:
             bot.send_message(message.chat.id, 'Пользователь создан.')
@@ -176,7 +178,7 @@ def get_login(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_password", content_types=['text'])
-def get_name(message):
+def get_password(message):
     global password
     password = message.text
     states[message.chat.id] = None
@@ -184,23 +186,27 @@ def get_name(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_group_name", content_types=['text'])
-def get_name(message):
-    global group_name
+def get_group_name(message):
+    global group_name, group_id
     group_name = message.text
     if not group_exists(group_name):
         bot.send_message(message.chat.id, 'Такая группа не существует!')
     else:
+        group_id = get_group_by_name(group_name).id
+        print(group_id)
         states[message.chat.id] = None
         create_student(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_subject_name", content_types=['text'])
-def get_name(message):
-    global subject_name
+def get_subject_name(message):
+    global subject_name, subject_id
     subject_name = message.text
     if not subject_exists(subject_name):
         bot.send_message(message.chat.id, 'Такого предмета не существует!')
     else:
+        subject_id = get_subject_id_by_name(subject_name).id
+        print(subject_id)
         states[message.chat.id] = None
         create_student(message)
 
@@ -209,11 +215,17 @@ def get_name(message):
 def get_teacher_name(message):
     global teacher_name
     teacher_name = message.text
-    if not subject_exists(teacher_name):
-        bot.send_message(message.chat.id, 'Такого предмета не существует!')
-    else:
+    check_user_is_teacher = check_teacher_subject_group(teacher_name, subject_id, group_id)
+    print(teacher_name)
+    print(subject_id)
+    print(group_id)
+    print(check_user_is_teacher)
+    if check_user_is_teacher:
         states[message.chat.id] = None
         create_student(message)
+    else:
+        bot.send_message(message.chat.id, 'Такого преподавателя  не существует!')
+        bot.send_message(message.chat.id, 'Попробуйте еще раз.')
 
 
 @bot.message_handler(commands=['checkCurrentDeadline'])
@@ -221,18 +233,18 @@ def check_actual_homework(message):
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
     user_tg_id = message.from_user.id
-    # user = get_user_by_tg_id(user_tg_id)
     task_list = get_actual_tasks_for_group(get_group_id_by_telegram_id(user_tg_id))
     if task_list:
         bot.send_message(message.chat.id, text="Актуальные задания:".format(message.from_user), reply_markup=markup)
         for task_content in task_list:
             name_subject = get_subject(task_content.subject_id)
+            name_subject = name_subject[0]['name'] if name_subject else 'Неизвестно'
 
             message_text = (
                 f"ID: {task_content.id} \n"
                 f"Заголовок: {task_content.title}\n"
                 f"Описание: {task_content.description}\n"
-                f"Преподаватель: {teacher_name}\n"
+                f"Преподаватель: {get_user_name(task_content.teacher_id)}\n"
                 f"Название предмета: {name_subject}"
             )
             bot.send_message(message.chat.id, text=message_text.format(message.from_user), reply_markup=markup)
@@ -248,7 +260,7 @@ def check_actual_homework(message):
 @bot.message_handler(commands=['addHomeWork'])
 def add_homework(message):
     global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, \
-        time_delivery, task_id, teacher_id, teacher_name, task, time_delivery
+        time_delivery, task_id, teacher_id, teacher_name, task, time_delivery, subject
 
     user_tg_id = message.from_user.id
     user = get_user_by_tg_id(user_tg_id)
@@ -268,6 +280,7 @@ def add_homework(message):
         task_list = get_task_from_user(user.id, user.group_id, teacher_id)
         for task_content in task_list:
             name_subject = get_subject(task_content.subject_id)
+            name_subject = name_subject[0]['name'] if name_subject else 'Неизвестно'
 
             message_text = (f"ID: {task_content.id} \n"
                             f"Заголовок: {task_content.title}\n"
@@ -286,10 +299,9 @@ def add_homework(message):
                          text="Напишите ID задания, которые собираетесь сдать?".format(message.from_user),
                          reply_markup=markup)
         states[message.chat.id] = "get_task"
-        # print(get_task_from_user)
     elif title is None:
         markup = types.ReplyKeyboardRemove(selective=False)
-        bot.send_message(message.chat.id, 'Напишите заголовок для задания')
+        bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
         states[message.chat.id] = "title_homework"
     elif description is None:
         bot.send_message(message.chat.id, 'Напишите описание для задания')
@@ -330,7 +342,7 @@ def add_homework(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_task", content_types=['text'])
-def input_task(message):
+def get_task(message):
     global task_id, task
     try:
         task_id = int(message.text)
@@ -346,7 +358,7 @@ def input_task(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_teacher", content_types=['text'])
-def input_group(message):
+def get_teacher(message):
     global teacher_id, teacher_name
     teacher_id = message.text.split(':')[0].strip()
     teacher_name = message.text.split(': ')[1].strip()
@@ -355,8 +367,8 @@ def input_group(message):
 
 @bot.message_handler(commands=['createHomeWork'])
 def create_home_work(message):
-    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, user_id, group_id
-    # Make sure 'states' is defined somewhere in your code
+    global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, \
+        user_id, group_id, subject
     user_tg_id = message.from_user.id
     user_id = get_user_tg_id(user_tg_id)
     if not is_user_teacher(user_tg_id):
@@ -376,8 +388,8 @@ def create_home_work(message):
                          reply_markup=markup)
         states[message.chat.id] = "group"
     elif subject is None:
+        markup = types.ReplyKeyboardMarkup(selective=False)
         group_id = get_group_id_by_name(group)
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
         subjects = get_subjects_by_teacher_and_group(user_id, group_id)
 
         for name in subjects:
@@ -388,7 +400,7 @@ def create_home_work(message):
                          reply_markup=markup)
         states[message.chat.id] = "subject"
     elif title is None:
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup = types.ReplyKeyboardRemove(selective=True)
         bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
         states[message.chat.id] = "title"
     elif description is None:
@@ -409,7 +421,7 @@ def create_home_work(message):
 
         states[message.chat.id] = "file_task"
     if file_task is not None and stopDL is not None and startDL is not None and title is not None and group is not None:
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+        markup = types.ReplyKeyboardRemove(selective=True)
         add_task(
             user_id,
             group,
@@ -423,6 +435,7 @@ def create_home_work(message):
             subject
         )
         bot.send_message(message.chat.id, text="Домашнее задание добавлена", reply_markup=markup)
+        subject = None
         group = None
         title = None
         description = None
@@ -432,6 +445,7 @@ def create_home_work(message):
         file_name = None
         file_task = None
         states[message.chat.id] = None
+        start(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task", content_types=['text'])
@@ -447,7 +461,7 @@ def check_file(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task_homework", content_types=['text'])
-def check_file(message):
+def check_homework_file(message):
     global file_task
     if message.text.lower() == "да":
         bot.send_message(message.chat.id, text="Прикрепите zip файл")
@@ -470,7 +484,7 @@ def handle_document(message):
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "file_task_homework",
                      content_types=['document'])
-def handle_document(message):
+def handle_homework_document(message):
     global file_task_bytes, file_name, file_task
     file_info = bot.get_file(message.document.file_id)
     file_task_bytes = bot.download_file(file_info.file_path)
@@ -480,7 +494,7 @@ def handle_document(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "stopDL", content_types=['text'])
-def input_group(message):
+def input_stopDL(message):
     global stopDL, states
     stopDL = message.text.lower()
     if check_date_format(stopDL):
@@ -488,7 +502,6 @@ def input_group(message):
         states[message.chat.id] = None
         create_home_work(message)
     else:
-        # ошибку можно прокинуть свою
         bot.send_message(message.chat.id, 'Дата написана в неверном формате')
 
 
@@ -497,7 +510,7 @@ def check_date_format(date_string):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "startDL", content_types=['text'])
-def input_group(message):
+def input_startDL(message):
     global startDL, states
     startDL = message.text.lower()
     if check_date_format(startDL):
@@ -505,12 +518,11 @@ def input_group(message):
         states[message.chat.id] = None
         create_home_work(message)
     else:
-        # ошибку можно прокинуть свою
         bot.send_message(message.chat.id, 'Дата написана в неверном формате')
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "title_homework", content_types=['text'])
-def input_group(message):
+def input_title(message):
     global title, states
     title = message.text.lower()
     if title is not None and title.strip() != "":
@@ -523,7 +535,7 @@ def input_group(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "title", content_types=['text'])
-def input_group(message):
+def input_title(message):
     global title, states
     title = message.text.lower()
     if title is not None and title.strip() != "":
@@ -536,7 +548,7 @@ def input_group(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "description", content_types=['text'])
-def input_group(message):
+def input_description(message):
     global description, states
     description = message.text.lower()
     if description is not None and description.strip() != "":
@@ -544,12 +556,11 @@ def input_group(message):
         states[message.chat.id] = None
         create_home_work(message)
     else:
-        # ошибку можно прокинуть свою
         bot.send_message(message.chat.id, 'Строка пустая или добавлена')
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "description_homework", content_types=['text'])
-def input_group(message):
+def input_description_homework(message):
     global description, states
     description = message.text.lower()
     if description is not None and description.strip() != "":
@@ -576,7 +587,7 @@ def input_group(message):
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "subject", content_types=['text'])
-def input_group(message):
+def input_subject(message):
     global subject, states
     subjects = get_subjects_by_teacher_and_group(user_id, group_id)
     subject = message.text
@@ -645,5 +656,5 @@ def func(message):
 def start_bot():
     # bot.polling(none_stop=True)
     print('start')
-    bot.infinity_polling(timeout=10, long_polling_timeout=5)
+    bot.infinity_polling(long_polling_timeout=5)
     print('stop')

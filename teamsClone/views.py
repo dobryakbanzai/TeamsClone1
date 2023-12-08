@@ -1,21 +1,11 @@
 from datetime import datetime
 
 from django.db.models import Q
-from django.http import JsonResponse
 from django.utils import timezone
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
 
 from .models import Subject, Task, Users, Group, GroupTask, Homework, SubjectGroup, SubjectTeacher
 from .serializers import UsersSerializer, SubjectSerializer, \
-    TaskSerializer, GroupNameSerializer
-
-
-
-
-
-
+    GroupNameSerializer
 
 
 # READ
@@ -25,6 +15,7 @@ def get_unique_groups():
     unique_groups = Group.objects.values('name').distinct()
     serialize_unique_groups = GroupNameSerializer(unique_groups, many=True).data
     return serialize_unique_groups
+
 
 def get_task_by_id(task_id):
     try:
@@ -53,6 +44,22 @@ def get_user_tg_id(telegram_id):
 def get_user_id(telegram_id):
     try:
         user = Users.objects.get(telegram_id=telegram_id)
+        return user.id
+    except Users.DoesNotExist:
+        return None
+
+
+def get_user_name(user_id):
+    try:
+        user = Users.objects.get(id=user_id)
+        return user.name
+    except Users.DoesNotExist:
+        return None
+
+
+def get_user_id_by_name(user_name):
+    try:
+        user = Users.objects.get(name=user_name)
         return user.id
     except Users.DoesNotExist:
         return None
@@ -104,13 +111,8 @@ def get_actual_tasks_for_group(group_id):
     return actual_tasks
 
 
-def get_verified_homeworks_by_user(user):
-    return Homework.objects.filter(student=user, is_verified=True)
-
-
-def get_unverified_homeworks_by_user(user):
-    return Homework.objects.filter(student=user, is_verified=False) | Homework.objects.filter(student=user,
-                                                                                              is_verified=None)
+def get_is_verified_homeworks_by_user(user, is_verified):
+    return Homework.objects.filter(student=user, is_verified=is_verified)
 
 
 def get_group_by_name(group_name):
@@ -225,22 +227,15 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
     new_group_task.save()
 
 
-def add_homework_in_db(student_id, title, description, task_id, file_name, file_byte):
+def add_homework_in_db(student, title, description, task_id, file_name, file_byte):
     try:
-        # Получение GroupTask по task_id
-        group_task = GroupTask.objects.get(task_id=task_id)
+        GroupTask.objects.get(task_id=task_id)
     except GroupTask.DoesNotExist:
         raise ValueError("Задание не найдено в GroupTask")
 
-    # Проверка, что время сдачи не позже столбца 'stop_deadline' у задания в GroupTask
-    current_time = datetime.now().time()
-
-    # if current_time < group_task.start_deadline or current_time > group_task.stop_deadline:
-    #     raise ValueError("Время сдачи находится вне разрешенного диапазона")
-
     # Создание нового домашнего задания
     homework = Homework.objects.create(
-        student_id=student_id,
+        student_id=student.id,
         title=title,
         description=description,
         task_id=task_id,
@@ -262,10 +257,7 @@ def create_user_with_checks(name, login, password, telegram_id, is_teacher, grou
         group = Group.objects.get(name=group_name)
 
         # Проверка существования пользователя (преподавателя)
-        if is_teacher:
-            teacher = Users.objects.get(name=teacher_name, is_teacher=True)
-        else:
-            teacher = None
+        teacher = Users.objects.get(name=teacher_name, is_teacher=True)
 
         # Проверка существования предмета
         subject = Subject.objects.get(name=subject_name)
@@ -309,6 +301,32 @@ def subject_exists(subject_name):
         return True
     except ObjectDoesNotExist:
         return False
+
+def get_subject_id_by_name(subject_name):
+    try:
+        subject = Subject.objects.get(name=subject_name)
+        return subject
+    except ObjectDoesNotExist:
+        return None
+
+def check_teacher_subject_group(teacher_name, subject_id, group_id):
+    # Проверка существования преподавателя с указанным именем
+    teacher_exists = Users.objects.filter(name=teacher_name, is_teacher=True).exists()
+
+    if teacher_exists:
+        # Проверка, что преподаватель ведет указанный предмет для данной группы
+        teacher_id = Users.objects.get(name=teacher_name, is_teacher=True).id
+        subject_teacher_exists = SubjectTeacher.objects.filter(
+            teacher_id=teacher_id, subject_id=subject_id).exists()
+
+        if subject_teacher_exists:
+            # Проверка, что группа связана с указанным предметом
+            group_subject_exists = SubjectGroup.objects.filter(
+                group_id=group_id, subject_id=subject_id).exists()
+
+            return group_subject_exists
+
+    return None
 
 
 def teacher_exists_for_subject(teacher_name, teacher_login, subject_name):
