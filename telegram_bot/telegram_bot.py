@@ -135,7 +135,7 @@ def create_student(message):
         bot.send_message(message.chat.id, 'Введите Вашу группу.')
         states[message.chat.id] = "get_group_name"
     elif subject_name is None:
-        bot.send_message(message.chat.id, 'Введите Ваш имя предмета.')
+        bot.send_message(message.chat.id, 'Введите название предмета.')
         states[message.chat.id] = "get_subject_name"
     elif teacher_name is None:
         bot.send_message(message.chat.id, 'Введите ФИО Вашего преподавателя')
