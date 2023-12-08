@@ -1,11 +1,10 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Страница входа</title>
-
-  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Страница входа</title>
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
   <style>
     body {
       background-color: #FDF5DF;
@@ -55,18 +54,22 @@
     <div class="row">
       <div class="col-md-6">
         <div class="text-center">
-          <h1>TeamsClone</h1>
-          <h5>Teams task manager clone {{ user }}</h5>
+            <h1>TeamsClone</h1>
+            <h5>Teams task manager clone </h5>
+            <h6 style="color: red">{% if error != None%} {{ error }} {% endif %}</h6>
         </div>
       </div>
       <div class="col-md-6">
-        <div class="login-form">
-          <h1>Вход</h1>
-          <input type="text" placeholder="Логин">
-          <input type="password" placeholder="Пароль">
-          <button>Войти</button>
-          <a href="#">Регистрация</a>
-        </div>
+        <form method="post" action="{% url 'login' %}">
+          {% csrf_token %}
+          <div class="login-form">
+            <h1>Вход</h1>
+            <input type="text" name="username" placeholder="Логин">
+            <input type="password" name="password" placeholder="Пароль">
+            <button type="submit">Войти</button>
+            <a href="/reg">Регистрация</a>
+          </div>
+        </form>
       </div>
     </div>
   </div>

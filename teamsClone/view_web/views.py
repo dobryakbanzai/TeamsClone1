@@ -23,9 +23,10 @@ def serialize_task(task):
     serializer = TaskSerializer(task)
     return serializer.data
 
+
 def add_teacher(name, login, password, telegram_id, point, group_id):
-    # Проверка на существование пользователя с аналогичным логином и паролем
-    if Users.objects.filter(login=login, password=password).exists():
+    # Проверка на существование пользователя с аналогичным логином
+    if Users.objects.filter(login=login).exists():
         return {'success': False, 'message': 'Пользователь с таким логином и паролем уже существует.'}
 
     # Создание нового пользователя
@@ -40,6 +41,7 @@ def add_teacher(name, login, password, telegram_id, point, group_id):
     new_teacher.save()
 
     return {'success': True, 'message': 'Преподаватель успешно добавлен.'}
+
 
 # 6 разбиваю его на несколько запросов
 # 1. получение всех заданий по предмету и препода get_list_tasks_by_subject_id(subject_id,teacher_id)
@@ -209,17 +211,14 @@ def get_sdannix_work(subject_id, teacher_id):
 
 
 def get_all_courses(teacher_id):
-    # Get the list of subjects taught by the teacher
-    subjects_taught = SubjectTeacher.objects.filter(teacher_id=teacher_id).values_list('subject__name',
-                                                                                       flat=True).distinct()
 
-    # Get the list of groups that study under the teacher
-    groups_studied = SubjectGroup.objects.filter(subject__subjectteacher__teacher_id=teacher_id).values_list(
-        'group__name', flat=True).distinct()
+    subgr = SubjectGroup.objects.filter(teacher_id = teacher_id)
 
-    result = {
-        'subjects': subjects_taught,
-        'groups': groups_studied
-    }
+    result = []
+
+    for sg in subgr:
+        group = sg.group
+        subject = sg.subject
+        result.append({'group': group, 'subject': subject})
 
     return result

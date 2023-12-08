@@ -17,20 +17,25 @@
     }
 
     .group-list {
-      background-color: #5EBEC4;
-      border-radius: 10px;
-      padding: 20px;
-      color: #fff;
-      transition: background-color 0.3s ease;
+        background-color: #5EBEC4;
+        border-radius: 10px;
+        padding: 20px;
+        color: #fff;
+        transition: background-color 0.3s ease;
+        /* Add this line to enable vertical scroll */
+        max-height: 70vh; /* Add this line to limit the height and enable scroll */
     }
+
     .group-list h1 {
       font-size: 24px;
       font-weight: bold;
       margin-bottom: 20px;
     }
     .group-list ul {
-      list-style-type: none;
-      padding: 0;
+        overflow-y: auto;
+        list-style-type: none;
+        padding: 0;
+        max-height: 40vh;
     }
     .group-list li {
       margin-bottom: 10px;
@@ -67,6 +72,7 @@
           <h1>TeamsClone</h1>
           <h5>Главная страница</h5>
           <h6>Отображение всех ваших групп</h6>
+            <h5 style="color:#2c7900;">{{ user.first_name }}</h5>
         </div>
       </div>
       <div class="col-md-6">
@@ -74,12 +80,24 @@
           <h1>Список групп</h1>
           <ul>
             {% for group in groups %}
-              <li><a href="/grouppage/" class="group-link">{{ group.num }}   |    {{ group.name }}</a></li>
+              <li><a href="/grouppage/" class="group-link">{{ group.group.name }}   |    {{ group.subject.name }}</a></li>
             {% endfor %}
           </ul>
           <div class="col-md-6">
 {#            <div class="col-md-6 ">#}
-                <button class="btn btn-primary" style="width: 100%;">Добавить новую группу</button>
+                <div class="row">
+                    <div class="col">
+                        <a href="/addnewgroup/" class="btn btn-primary" style="width: 100%;">Добавить новую группу</a>
+                    </div>
+                    <br>
+                    <div class="col">
+                        <a href="/createnewsubject/" class="btn btn-primary" style="width: 100%; background-color: forestgreen">Создать новый предмет</a>
+                    </div>
+                    <br>
+                    <div class="col">
+                        <a href="/addnewacademicgroup/" class="btn btn-primary" style="width: 100%; background-color: blueviolet">Добавить новую академ группу</a>
+                    </div>
+                </div>
 {#            </div>#}
           </div>
         </div>
@@ -95,8 +113,6 @@
                 </div>
             </form>
             </div>
-
-
         </div>
     </div>
   </div>

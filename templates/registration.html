@@ -39,8 +39,7 @@
         font-family: "Roboto", "Arial", sans-serif;
         margin-bottom: 20px;
     }
-    .register-form input[type="text"],
-    .register-form input[type="password"] {
+    .register-form input {
       width: 100%;
       padding: 10px;
       margin-bottom: 10px;
@@ -72,14 +71,15 @@
         </div>
       </div>
       <div class="col-md-6">
-        <div class="register-form">
+        <form class="register-form" method="post" action="{% url 'registrate' %}">
+          {% csrf_token %}
           <h1>Регистрация</h1>
-          <input type="text" placeholder="Имя">
-          <input type="text" placeholder="Электронная почта">
-          <input type="password" placeholder="Пароль">
-          <button>Зарегистрироваться</button>
-          <a href="#">Вход</a>
-        </div>
+          <input type="text" name="username" placeholder="Логин">
+          <input type="text" name="flname" placeholder="ФИО">
+          <input type="password" name="password" placeholder="Пароль">
+          <button type="submit">Зарегистрироваться</button>
+          <a href="/">Вход</a>
+        </form>
       </div>
     </div>
   </div>

@@ -21,9 +21,20 @@ from . import views
 urlpatterns = [
     # path("admin/", admin.site.urls),
     path("restfuncs/", include("teamsClone.urls")),
-    path("", views.sign_in),
+    path("<str:error>", views.sign_in, name='firsterrorpage'),
+    path("", views.sign_in, name='firstpage'),
     path("reg/", views.sign_up),
-    path("mainpage/", views.all_groups),
+    path("mainpage/", views.all_groups, name='mainpage'),
     path('logout/', views.exit_from_sys, name='logout'),
     path("grouppage/", views.group_page),
+    path("addnewgroup/", views.addGroup),
+    path("addinggroup/", views.addingGroup, name='addinggroup'),
+    path("createnewsubject/", views.createNewSubject),
+    path("creatingnewsubject/", views.creatingNewSubject, name = 'creatingnewsubject'),
+    path("addnewacademicgroup/", views.addnewacademicgroup),
+    path("addingingnewacademicgroup/", views.addingnewacademicgroup, name = 'addingnewacademicgroup'),
+    path("login/", views.login_view, name='login'),
+    path("dreg/", views.regist_view, name='registrate'),
+    path("stud/", views.stud_view),
+
 ]

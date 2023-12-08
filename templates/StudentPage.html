@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница студента</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color:  #DDA0DD;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .student-info{
+      background-color: #FFEBCD;
+      border-radius: 10px;
+      padding: 20px;
+      color: #000000;
+      transition: background-color 0.3s ease;
+    }
+    .student-info h1, .task-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .student-info ul, .task-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .student-info li, .task-list li {
+      margin-bottom: 10px;
+    }
+    .task-status {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .task-list{
+        background-color: #AFEEEE;
+        text-align: center;
+        {#overflow-y: scroll;#}
+        height: 500px;
+    }
+
+    .task-status.completed {
+      background-color: green;
+    }
+    .task-status.not-completed {
+      background-color: red;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .task-list a:hover {
+      background-color: #fff;
+      color: #ffb779;
+    }
+    select {
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        color: #000;
+        transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    }
+
+    button:hover{
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    select:hover {
+        border-color: #5EBEC4;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: #5EBEC4;
+        background-color: #FDF5DF;
+        color: #000;
+    }
+
+    form ul::-webkit-scrollbar {
+        width: 10px; /* Задайте ширину полосы прокрутки */
+    }
+
+    form ul::-webkit-scrollbar-track {
+        background-color: #f1f1f1; /* Задайте цвет фона полосы прокрутки */
+    }
+
+    form ul::-webkit-scrollbar-thumb {
+        background-color: #888; /* Задайте цвет полосы прокрутки */
+        border-radius: 5px; /* Задайте радиус скругления углов полосы прокрутки */
+    }
+
+    form ul::-webkit-scrollbar-thumb:hover {
+        background-color: #555; /* Задайте цвет полосы прокрутки при наведении */
+    }
+
+    form ul{
+        height: 500px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+        <div class="row">
+            <div class="col" style="text-align: center">
+                <div class="row">
+                    <div class="col-md-3">
+                        <button class="btn " style="color: white; background-color: #FFA07A">НАЗАД</button>
+                    </div>
+                    <div class="col">
+                        <div class="text-center">
+                            <h1>TeamsClone</h1>
+                            <h5>Страница группы</h5>
+                            <h6>Отображение информации о группе и списка студентов</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col" style="text-align: center">
+                <div class="student-info">
+                    <h1>ИНФОРМАЦИЯ О СТУДЕНТЕ</h1>
+                    <ul>
+                        <li>Имя {{ student.name }}</li>
+                        <li>Группа  {{ student.group }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col" id="header" style="text-align: center">
+                <br>
+                <h1>СПИСОК ЗАДАНИЙ СТУДЕНТА</h1>
+                <br>
+            </div>
+        </div>
+        <div class="row" >
+            <div class="col">
+                <div class="task-list" >
+                    <form action="">
+
+                        <ul>
+                            {% for task in tasks %}
+                                <li>{{ task.name }}</li>
+                            {% endfor %}
+                        </ul>
+
+                        <button type="submit" class="btn" style="background-color: #98FB98">ПРИНЯТЬ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      console.log("Страница загружена");
+      // Ваш JavaScript код
+    });
+  </script>
+</body>
+</html>
