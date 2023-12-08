@@ -161,7 +161,7 @@ def create_student(message):
         else:
             bot.send_message(message.chat.id, 'Ошибка при создании пользователя.')
             bot.send_message(message.chat.id, 'Попробуйте позже, если проблема не уйдет свяжитесь с технической'
-                                              'поддержкой!')
+                                              ' поддержкой!')
             start(message)
 
 
@@ -220,10 +220,6 @@ def get_teacher_name(message):
     global teacher_name
     teacher_name = message.text
     check_user_is_teacher = check_teacher_subject_group(teacher_name, subject_id, group_id)
-    print(teacher_name)
-    print(subject_id)
-    print(group_id)
-    print(check_user_is_teacher)
     if check_user_is_teacher:
         states[message.chat.id] = None
         create_student(message)
@@ -372,37 +368,38 @@ def get_teacher(message):
 @bot.message_handler(commands=['createHomeWork'])
 def create_home_work(message):
     global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, \
-        user_id, group_id, subject
+        user_id, group_id, subject, teacher_name, subject_id
     user_tg_id = message.from_user.id
     user_id = get_user_tg_id(user_tg_id)
+    teacher_name = get_user_name(user_id)
     if not is_user_teacher(user_tg_id):
         bot.send_message(message.chat.id,
                          'У Вас нет прав для этой функции.')
         start(message)
         return
-
-    if group is None:
+    if subject is None:
+        markup = types.ReplyKeyboardMarkup(selective=False)
+        subjects = get_subjects_by_teacher(user_id)
+        if not subjects:
+            bot.send_message(message.chat.id, text="Список предметов пуст.")
+        else:
+            for name in subjects:
+                button_text = name.name
+                markup.add(types.KeyboardButton(button_text))
+            bot.send_message(message.chat.id,
+                             text="Выберите из списка Ваш предмет".format(message.from_user),
+                             reply_markup=markup)
+            states[message.chat.id] = "subject"
+    elif group is None:
         markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        groups = get_unique_groups()
+        groups = get_groups_by_teacher_and_subject(user_id, subject_id)
         for name in groups:
-            button_text = name.get('name')
+            button_text = name.name
             markup.add(types.KeyboardButton(button_text))
         bot.send_message(message.chat.id,
                          text="Выберите из списка группу или введите сами".format(message.from_user),
                          reply_markup=markup)
         states[message.chat.id] = "group"
-    elif subject is None:
-        markup = types.ReplyKeyboardMarkup(selective=False)
-        group_id = get_group_id_by_name(group)
-        subjects = get_subjects_by_teacher_and_group(user_id, group_id)
-
-        for name in subjects:
-            button_text = name.name
-            markup.add(types.KeyboardButton(button_text))
-        bot.send_message(message.chat.id,
-                         text="Выберите из списка Ваш предмет".format(message.from_user),
-                         reply_markup=markup)
-        states[message.chat.id] = "subject"
     elif title is None:
         markup = types.ReplyKeyboardRemove(selective=True)
         bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
@@ -448,6 +445,8 @@ def create_home_work(message):
         file_task_bytes = []
         file_name = None
         file_task = None
+        teacher_name = None
+        subject_id = None
         states[message.chat.id] = None
         start(message)
 
@@ -579,9 +578,10 @@ def input_description_homework(message):
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "group", content_types=['text'])
 def input_group(message):
     global group, states
-    groups = get_unique_groups()
+    print(user_id, subject_id)
+    groups = get_groups_by_teacher_and_subject(user_id, subject_id)
     group = message.text.lower()
-    if any(group in x['name'] for x in groups):
+    if any(group in x.name for x in groups):
         bot.send_message(message.chat.id, f'Выбрана группа: {group}')
         # Завершаем состояние
         states[message.chat.id] = None
@@ -592,12 +592,18 @@ def input_group(message):
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "subject", content_types=['text'])
 def input_subject(message):
-    global subject, states
-    subjects = get_subjects_by_teacher_and_group(user_id, group_id)
+    global subject, states, subject_id
+    subjects = get_subjects_by_teacher(user_id)
     subject = message.text
-    print(subject)
-    if any(subject in x.name for x in subjects):
-        bot.send_message(message.chat.id, f'Выбран предмет: {subject}')
+    subject_obj = None
+    for x in subjects:
+        if subject == x.name:
+            subject_obj = x
+            break
+
+    if subject:
+        bot.send_message(message.chat.id, f'Выбран предмет: {subject_obj.name}')
+        subject_id = subject_obj.id
         # Завершаем состояние
         states[message.chat.id] = None
         create_home_work(message)

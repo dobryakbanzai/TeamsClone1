@@ -17,6 +17,33 @@ def get_unique_groups():
     return serialize_unique_groups
 
 
+from django.db import connection
+
+def get_groups_by_teacher_and_subject(teacher_id, subject_id):
+    groups = Group.objects.filter(
+        subjectgroup__teacher_id=teacher_id,
+        subjectgroup__subject_id=subject_id
+    ).distinct()
+
+    return groups
+def get_teacher_studing_groups(teacher_name):
+    teacher_name = "amir"
+    # Создайте запрос и извлеките SQL-запрос и параметры
+    query = Group.objects.filter(
+        subjectgroup__teacher__name=teacher_name
+    ).distinct()
+    sql, params = query.query.sql_with_params()
+
+    print(sql, params)
+
+    with connection.cursor() as cursor:
+        cursor.execute(sql, params)
+        result = cursor.fetchall()
+
+    print(result)
+    return query
+
+
 def get_task_by_id(task_id):
     try:
         task = Task.objects.get(id=task_id)
@@ -180,6 +207,9 @@ def get_actual_tasks_for_group(group_id):
 
     return actual_tasks
 
+def get_subjects_by_teacher(teacher_id):
+    subjects = Subject.objects.filter(subjectteacher__teacher_id=teacher_id).distinct()
+    return subjects
 
 def get_subjects_by_teacher_and_group(teacher_id, group_id):
     # Получаем предметы, связанные с преподавателем
@@ -302,12 +332,14 @@ def subject_exists(subject_name):
     except ObjectDoesNotExist:
         return False
 
+
 def get_subject_id_by_name(subject_name):
     try:
         subject = Subject.objects.get(name=subject_name)
         return subject
     except ObjectDoesNotExist:
         return None
+
 
 def check_teacher_subject_group(teacher_name, subject_id, group_id):
     # Проверка существования преподавателя с указанным именем
