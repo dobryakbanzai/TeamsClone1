@@ -1,196 +1,20 @@
-from .models import Subject, Task, Users, Group, GroupTask, Homework
-from .serializers import UsersSerializer, SubjectSerializer, \
-    TaskSerializer, GroupNameSerializer
-from rest_framework import status
-from rest_framework.decorators import api_view
-from rest_framework.response import Response
-from django.http import JsonResponse
-from django.db.models import Q
+from datetime import datetime
 
-from datetime import datetime, time
+from django.db.models import Q
 from django.utils import timezone
 
-
-# SERIALIZERS
-def serialize_users(users):
-    serializer = UsersSerializer(users, many=True)
-    return serializer.data
-
-
-def serialize_subject(subject):
-    serializer = SubjectSerializer(subject)
-    return serializer.data
-
-
-def serialize_task(task):
-    serializer = TaskSerializer(task)
-    return serializer.data
-
-
-# CREATE
-@api_view(['POST'])
-def create_user_serialized(request):
-    serializer = UsersSerializer(data=request.data)
-    if serializer.is_valid():
-        user = Users.objects.create(**serializer.validated_data)
-        serialized_user = UsersSerializer(user).data
-        return Response(serialized_user, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def create_subject_serialized(request):
-    serializer = SubjectSerializer(data=request.data)
-    if serializer.is_valid():
-        subject = Subject.objects.create(**serializer.validated_data)
-        serialized_subject = SubjectSerializer(subject).data
-        return Response(serialized_subject, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['POST'])
-def create_task_serialized(request):
-    serializer = TaskSerializer(data=request.data)
-    if serializer.is_valid():
-        task = Task.objects.create(**serializer.validated_data)
-        serialized_task = TaskSerializer(task).data
-        return Response(serialized_task, status=status.HTTP_201_CREATED)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+from .models import Subject, Task, Users, Group, GroupTask, Homework, SubjectGroup, SubjectTeacher
+from .serializers import UsersSerializer, SubjectSerializer, \
+    GroupNameSerializer
 
 
 # READ
-@api_view(['GET'])
-def get_all_users_serialized(request):
-    users = Users.objects.all()
-    serialized_users = UsersSerializer(users, many=True).data
-    return Response({'users': serialized_users})
 
 
 def get_unique_groups():
     unique_groups = Group.objects.values('name').distinct()
     serialize_unique_groups = GroupNameSerializer(unique_groups, many=True).data
     return serialize_unique_groups
-
-
-@api_view(['GET'])
-def get_all_subjects_serialized(request):
-    subjects = Subject.objects.all()
-    serialized_subjects = SubjectSerializer(subjects, many=True).data
-    return Response({'subjects': serialized_subjects})
-
-
-@api_view(['GET'])
-def get_all_tasks_serialized(request):
-    tasks = Task.objects.all()
-    serialized_tasks = TaskSerializer(tasks, many=True).data
-    return Response({'tasks': serialized_tasks})
-
-
-# ... (Repeat the same pattern for other read functions)
-
-# UPDATE
-@api_view(['PUT'])
-def update_user_serialized(request, user_id):
-    user = get_user_by_id(user_id)
-    if not user:
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = UsersSerializer(instance=user, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        updated_user = get_user_by_id(user_id)
-        serialized_user = UsersSerializer(updated_user).data
-        return Response(serialized_user, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT'])
-def update_subject_serialized(request, subject_id):
-    subject = get_subject_by_id(subject_id)
-    if not subject:
-        return Response({'error': 'Subject not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = SubjectSerializer(instance=subject, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        updated_subject = get_subject_by_id(subject_id)
-        serialized_subject = SubjectSerializer(updated_subject).data
-        return Response(serialized_subject, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-@api_view(['PUT'])
-def update_task_serialized(request, task_id):
-    task = get_task_by_id(task_id)
-    if not task:
-        return Response({'error': 'Task not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = TaskSerializer(instance=task, data=request.data, partial=True)
-    if serializer.is_valid():
-        serializer.save()
-        updated_task = get_task_by_id(task_id)
-        serialized_task = TaskSerializer(updated_task).data
-        return Response(serialized_task, status=status.HTTP_200_OK)
-    return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-
-# ... (Repeat the same pattern for other update functions)
-
-# DELETE
-@api_view(['DELETE'])
-def delete_user_serialized(request, user_id):
-    user = get_user_by_id(user_id)
-    if not user:
-        return Response({'error': 'User not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    deleted_user = user
-    user.delete()
-    serialized_user = UsersSerializer(deleted_user).data
-    return Response(serialized_user, status=status.HTTP_204_NO_CONTENT)
-
-
-# GET BY ID
-@api_view(['GET'])
-def get_user_by_id_serialized(request, user_id):
-    user = get_user_by_id(user_id)
-    if not user:
-        return JsonResponse({'error': 'Us   er not found'}, status=404)
-    serializer = UsersSerializer(user)
-    return JsonResponse(serializer.data)
-
-
-def get_user_by_id(user_id):
-    try:
-        user = Users.objects.get(id=user_id)
-        return user
-    except Users.DoesNotExist:
-        return None
-
-
-@api_view(['GET'])
-def get_subject_by_id_serialized(request, subject_id):
-    subject = get_subject_by_id(subject_id)
-    if not subject:
-        return JsonResponse({'error': 'Subject not found'}, status=404)
-    serialized_subject = SubjectSerializer(subject).data
-    return JsonResponse(serialized_subject)
-
-
-def get_subject_by_id(subject_id):
-    try:
-        subject = Subject.objects.get(id=subject_id)
-        return subject
-    except Subject.DoesNotExist:
-        return None
-
-
-@api_view(['GET'])
-def get_task_by_id_serialized(request, task_id):
-    task = get_task_by_id(task_id)
-    if not task:
-        return JsonResponse({'error': 'Task not found'}, status=404)
-    serialized_task = TaskSerializer(task).data
-    return JsonResponse(serialized_task)
 
 
 def get_task_by_id(task_id):
@@ -225,6 +49,72 @@ def get_user_id(telegram_id):
         return None
 
 
+def get_user_name(user_id):
+    try:
+        user = Users.objects.get(id=user_id)
+        return user.name
+    except Users.DoesNotExist:
+        return None
+
+
+def get_user_id_by_name(user_name):
+    try:
+        user = Users.objects.get(name=user_name)
+        return user.id
+    except Users.DoesNotExist:
+        return None
+
+
+def get_subject_id_by_teacher_and_group(teacher_id, group_id):
+    try:
+        subject_id = SubjectTeacher.objects.filter(
+            teacher__id=teacher_id,
+            teacher__is_teacher=True,
+            teacher__group__id=group_id
+        ).values('subject__id').first()['subject__id']
+
+        return subject_id
+    except Exception as e:
+        print(f"Error: {e}")
+        return None
+
+
+def get_user_by_tg_id(telegram_id):
+    try:
+        user = Users.objects.get(telegram_id=telegram_id)
+        return user
+    except Users.DoesNotExist:
+        return None
+
+
+def get_group_id_by_telegram_id(telegram_id):
+    try:
+        user = Users.objects.get(telegram_id=telegram_id)
+        return user.group_id
+    except Users.DoesNotExist:
+        return None
+
+
+def get_actual_tasks_for_group(group_id):
+    current_date = date.today()
+
+    actual_tasks = Task.objects.filter(
+        Q(grouptask__group_id=group_id) &
+        (Q(grouptask__start_deadline__lte=current_date) & Q(grouptask__stop_deadline__gte=current_date))
+    ).distinct()
+
+    print("Query:", actual_tasks.query)  # Вывести сформированный SQL-запрос для отладки
+
+    for task in actual_tasks:
+        print(f"Task ID: {task.id}, Title: {task.title}, Description: {task.description}")
+
+    return actual_tasks
+
+
+def get_is_verified_homeworks_by_user(user, is_verified):
+    return Homework.objects.filter(student=user, is_verified=is_verified)
+
+
 def get_group_by_name(group_name):
     try:
         group = Group.objects.get(name=group_name)
@@ -253,19 +143,20 @@ def get_subject(subject_id):
 
 def get_task_from_user(student_id, group_id, teacher_id):
     try:
-        current_time = timezone.now().time()  # Получаем текущее время как объект datetime.time()
+        current_datetime = timezone.now()
         group_tasks = GroupTask.objects.filter(group_id=group_id)
         task_list = []
 
-        # Получаем содержимое в таблице Task по каждому task_id
         for group_task in group_tasks:
             task_id = group_task.task_id
             task_content = Task.objects.filter(id=task_id, teacher_id=teacher_id).first()
 
             if task_content:
-                # Преобразуем stop_deadline в объект datetime для сравнения
-                stop_deadline_datetime = timezone.datetime.combine(timezone.now(), group_task.stop_deadline)
-                if current_time < stop_deadline_datetime.time():
+                stop_deadline_date_str = str(group_task.stop_deadline)
+                stop_deadline_date = datetime.strptime(stop_deadline_date_str, "%Y-%m-%d").date()
+                stop_deadline_datetime = timezone.make_aware(datetime.combine(stop_deadline_date, datetime.min.time()))
+
+                if current_datetime < stop_deadline_datetime:
                     task_list.append(task_content)
 
         return task_list
@@ -273,22 +164,46 @@ def get_task_from_user(student_id, group_id, teacher_id):
         return None
 
 
-def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id):
+from datetime import date
+
+
+def get_actual_tasks_for_group(group_id):
+    # Получаем текущую дату
+    current_date = date.today()
+
+    # Ищем задания, у которых срок сдачи еще не наступил
+    # и задания, у которых срок сдачи еще не прошел
+    actual_tasks = Task.objects.filter(
+        Q(grouptask__group_id=group_id) &
+        (Q(grouptask__start_deadline__lte=current_date) & Q(grouptask__stop_deadline__gte=current_date))
+    ).distinct()
+
+    return actual_tasks
+
+
+def get_subjects_by_teacher_and_group(teacher_id, group_id):
+    # Получаем предметы, связанные с преподавателем
+    teacher_subjects = SubjectTeacher.objects.filter(teacher__id=teacher_id).values_list('subject_id', flat=True)
+
+    # Получаем предметы, связанные с группой
+    group_subjects = SubjectGroup.objects.filter(group__id=group_id).values_list('subject_id', flat=True)
+
+    # Получаем общий список предметов для преподавателя и группы
+    subjects_ids = set(teacher_subjects) & set(group_subjects)
+
+    # Получаем объекты предметов по их идентификаторам
+    subjects = Subject.objects.filter(id__in=subjects_ids)
+
+    return subjects
+
+
+def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id, subject):
     # Задаем фиксированную дату
-    startDL = datetime.strptime(startDL, "%d-%m-%Y")
-    stopDL = datetime.strptime(stopDL, "%d-%m-%Y")
+    start = datetime.strptime(startDL, "%d-%m-%Y").date()
+    stop = datetime.strptime(stopDL, "%d-%m-%Y").date()
 
-    # Получаем текущее время
-    current_time = datetime.now().time()
-
-    # Создаем новый объект datetime с фиксированной датой и текущим временем
-    combined_startDL = datetime.combine(startDL.date(), current_time)
-    combined_stopDL = datetime.combine(stopDL.date(), current_time)
-
-    # Извлекаем время из объединенного объекта datetime
-    start_deadline = combined_startDL.time()
-    stop_deadline = combined_stopDL.time()
     existing_group = Group.objects.get(name=group)
+    existing_subject = Subject.objects.get(name=subject)
     # Create a new task instance
 
     new_task = Task(
@@ -296,7 +211,8 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
         description=description,
         file_name=file_name,
         file_byte=bytes(file_task_bytes),
-        teacher_id=user_id
+        teacher_id=user_id,
+        subject_id=existing_subject.id
     )
 
     new_task.save()
@@ -304,36 +220,146 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
     new_group_task = GroupTask(
         task=new_task,
         group=existing_group,
-        start_deadline=start_deadline,  # Replace with the actual start deadline
-        stop_deadline=stop_deadline  # Replace with the actual stop deadline
+        start_deadline=start,  # Replace with the actual start deadline
+        stop_deadline=stop  # Replace with the actual stop deadline
     )
 
     new_group_task.save()
 
 
-def add_homework_in_db(student_id, title, description, task_id,  file_name, file_byte):
+def add_homework_in_db(student, title, description, task_id, file_name, file_byte):
     try:
-        # Получение GroupTask по task_id
-        group_task = GroupTask.objects.get(task_id=task_id)
+        GroupTask.objects.get(task_id=task_id)
     except GroupTask.DoesNotExist:
         raise ValueError("Задание не найдено в GroupTask")
 
-    # Проверка, что время сдачи не позже столбца 'stop_deadline' у задания в GroupTask
-    current_time = datetime.now().time()
-
-    # if current_time < group_task.start_deadline or current_time > group_task.stop_deadline:
-    #     raise ValueError("Время сдачи находится вне разрешенного диапазона")
-
     # Создание нового домашнего задания
     homework = Homework.objects.create(
-        student_id=student_id,
+        student_id=student.id,
         title=title,
         description=description,
         task_id=task_id,
         file_name=file_name,
         file_byte=file_byte,
         is_verified=None,
-        time_delivery=datetime.now().time()
+        time_delivery=datetime.now().date()
     )
 
     return homework
+
+
+from django.core.exceptions import ObjectDoesNotExist
+
+
+def create_user_with_checks(name, login, password, telegram_id, is_teacher, group_name, subject_name, teacher_name):
+    try:
+        # Проверка существования группы
+        group = Group.objects.get(name=group_name)
+
+        # Проверка существования пользователя (преподавателя)
+        teacher = Users.objects.get(name=teacher_name, is_teacher=True)
+
+        # Проверка существования предмета
+        subject = Subject.objects.get(name=subject_name)
+
+        # Создание пользователя
+        user = Users.objects.create(
+            name=name,
+            login=login,
+            password=password,
+            telegram_id=telegram_id,
+            is_teacher=is_teacher,
+            group=group
+        )
+
+        # Если пользователь - студент, связываем его с предметом
+        if not is_teacher:
+            SubjectGroup.objects.create(
+                group=group,
+                subject=subject,
+                url_online_education=None  # Здесь вы можете указать ссылку на онлайн-обучение, если это необходимо
+            )
+
+        return user
+
+    except ObjectDoesNotExist as e:
+        print(f"Error: {e}")
+        return None
+
+
+def group_exists(group_name):
+    try:
+        Group.objects.get(name=group_name)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+
+def subject_exists(subject_name):
+    try:
+        Subject.objects.get(name=subject_name)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+def get_subject_id_by_name(subject_name):
+    try:
+        subject = Subject.objects.get(name=subject_name)
+        return subject
+    except ObjectDoesNotExist:
+        return None
+
+def check_teacher_subject_group(teacher_name, subject_id, group_id):
+    # Проверка существования преподавателя с указанным именем
+    teacher_exists = Users.objects.filter(name=teacher_name, is_teacher=True).exists()
+
+    if teacher_exists:
+        # Проверка, что преподаватель ведет указанный предмет для данной группы
+        teacher_id = Users.objects.get(name=teacher_name, is_teacher=True).id
+        subject_teacher_exists = SubjectTeacher.objects.filter(
+            teacher_id=teacher_id, subject_id=subject_id).exists()
+
+        if subject_teacher_exists:
+            # Проверка, что группа связана с указанным предметом
+            group_subject_exists = SubjectGroup.objects.filter(
+                group_id=group_id, subject_id=subject_id).exists()
+
+            return group_subject_exists
+
+    return None
+
+
+def teacher_exists_for_subject(teacher_name, teacher_login, subject_name):
+    try:
+        teacher = Users.objects.get(name=teacher_name, login=teacher_login, is_teacher=True)
+        subject = Subject.objects.get(name=subject_name)
+        SubjectTeacher.objects.get(teacher=teacher, subject=subject)
+        return True
+    except ObjectDoesNotExist:
+        return False
+
+
+def get_teacher_id_by_name_and_subject(teacher_name, subject_name):
+    try:
+        teacher_id = SubjectTeacher.objects.filter(
+            teacher__name=teacher_name,
+            subject__name=subject_name
+        ).values_list('teacher__id', flat=True).first()
+
+        if teacher_id:
+            return teacher_id
+        else:
+            print(f"Teacher '{teacher_name}' for subject '{subject_name}' not found.")
+            return None
+
+    except ObjectDoesNotExist as e:
+        print(f"Error: {e}")
+        return None
+
+
+def get_group_id_by_name(group_name):
+    try:
+        group = Group.objects.get(name=group_name)
+        return group.id
+    except Subject.DoesNotExist:
+        return None
