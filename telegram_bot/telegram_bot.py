@@ -6,6 +6,7 @@ from telebot import types
 
 from config import *
 from teamsClone.views import *
+from teamsClone.view_web.views import isTeacherRegistred
 
 bot = telebot.TeleBot(TOKEN_BOT)
 
@@ -40,6 +41,51 @@ login = None
 password = None
 group_name = None
 subject_name = None
+
+
+@bot.message_handler(commands=['addTeacherTgId'])
+def get_teacher_tg_id(message):
+    global login, password
+    user_tg_id = message.from_user.id
+    user = get_user_by_tg_id(user_tg_id)
+
+    if user is not None and not user.telegram_id is None:
+        bot.send_message(message.chat.id,
+                         ("Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли учителя"
+                          if user.is_teacher
+                          else "Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли студента"))
+        start(message)
+        return
+
+    if login is None:
+        bot.send_message(message.chat.id, 'Введите Ваш логин.')
+        states[message.chat.id] = "get_login_tg"
+    elif password is None:
+        bot.send_message(message.chat.id, 'Введите Ваш пароль.')
+        states[message.chat.id] = "get_password_tg"
+
+    if not login is None and not password is None:
+        is_login, user = isTeacherRegistred(login, password)
+        if is_login:
+            if not user.is_teacher:
+                bot.send_message(message.chat.id,
+                                 'Это опция только для преподавателей. Для студентов нужно создать аккаунт'
+                                 ' в боте отдельной командой \n'
+                                 '/createUser')
+                start(message)
+                return
+            try:
+                user.telegram_id = user_tg_id
+                user.save()
+                bot.send_message(message.chat.id,"Ваш ID теленрамма добавлен. Удачного использования!")
+                start(message)
+            except Users.DoesNotExist:
+                print(f"Teacher with ID {teacher_id} not found.")
+        else:
+            bot.send_message(message.chat.id, user)
+            login = None
+            password = None
+            start(message)
 
 
 @bot.message_handler(commands=['getSentHomeworkAssignments'])
@@ -112,15 +158,16 @@ def view_homeworks(is_verified, user, message):
 
 @bot.message_handler(commands=['createUser'])
 def create_student(message):
+    global user_name, login, password, group_name, subject_name, teacher_name
     markup = types.ReplyKeyboardRemove(selective=False)
     user_tg_id = message.from_user.id
     user = get_user_by_tg_id(user_tg_id)
 
     if user:
-
-        bot.send_message(message.chat.id, ("Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли учителя"
-           if user.is_teacher
-           else "Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли студента"))
+        bot.send_message(message.chat.id,
+                         ("Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли учителя"
+                          if user.is_teacher
+                          else "Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли студента"))
         return
     if user_name is None:
         bot.send_message(message.chat.id, 'Введите Ваше имя.')
@@ -157,7 +204,12 @@ def create_student(message):
             bot.send_message(message.chat.id, 'Пользователь создан.')
             states[message.chat.id] = None
             start(message)
-
+            user_name = None
+            login = None
+            password = None
+            group_name = None
+            subject_name = None
+            teacher_name = None
         else:
             bot.send_message(message.chat.id, 'Ошибка при создании пользователя.')
             bot.send_message(message.chat.id, 'Попробуйте позже, если проблема не уйдет свяжитесь с технической'
@@ -187,6 +239,22 @@ def get_password(message):
     password = message.text
     states[message.chat.id] = None
     create_student(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_login_tg", content_types=['text'])
+def get_login(message):
+    global login
+    login = message.text
+    states[message.chat.id] = None
+    get_teacher_tg_id(message)
+
+
+@bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_password_tg", content_types=['text'])
+def get_password(message):
+    global password
+    password = message.text
+    states[message.chat.id] = None
+    get_teacher_tg_id(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_group_name", content_types=['text'])
@@ -366,7 +434,7 @@ def get_teacher(message):
 
 
 @bot.message_handler(commands=['createHomeWork'])
-def create_home_work(message):
+def create_homework(message):
     global states, group, title, description, startDL, stopDL, file_task_bytes, file_name, file_task, \
         user_id, group_id, subject, teacher_name, subject_id
     user_tg_id = message.from_user.id
@@ -578,7 +646,6 @@ def input_description_homework(message):
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "group", content_types=['text'])
 def input_group(message):
     global group, states
-    print(user_id, subject_id)
     groups = get_groups_by_teacher_and_subject(user_id, subject_id)
     group = message.text.lower()
     if any(group in x.name for x in groups):
@@ -653,6 +720,7 @@ def func(message):
                          text="Если вы преподаватель подайте заявку на добавление вашего Telegrem аккаунта в базу данных."
                               "Тогда вы сможете добавлять домашние задания через бота с помощью команды \n"
                               "/createHomeWork \n"
+                              "/addTeacherTgId \n"
                               "Для студентов доступно: \n"
                               "/addHomeWork Прикрепить домашнее задание \n"
                               "/checkCurrentDeadline Просмотр информации по предмету \n"
