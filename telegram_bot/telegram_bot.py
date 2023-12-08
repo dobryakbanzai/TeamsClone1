@@ -117,8 +117,10 @@ def create_student(message):
     user = get_user_by_tg_id(user_tg_id)
 
     if user:
-        bot.send_message(message.chat.id, 'Вы уже есть в системе, можете свободно пользоваться ботом '
-                                          'в границах своей роли')
+
+        bot.send_message(message.chat.id, ("Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли учителя"
+           if user.is_teacher
+           else "Вы уже есть в системе, можете свободно пользоваться ботом в границах своей роли студента"))
         return
     if user_name is None:
         bot.send_message(message.chat.id, 'Введите Ваше имя.')
@@ -147,8 +149,8 @@ def create_student(message):
             password,
             user_tg_id,
             False,
-            group_id,
-            subject_id,
+            group_name,
+            subject_name,
             teacher_name
         )
         if user:
@@ -158,7 +160,9 @@ def create_student(message):
 
         else:
             bot.send_message(message.chat.id, 'Ошибка при создании пользователя.')
-            create_student(message)
+            bot.send_message(message.chat.id, 'Попробуйте позже, если проблема не уйдет свяжитесь с технической'
+                                              'поддержкой!')
+            start(message)
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_name", content_types=['text'])
