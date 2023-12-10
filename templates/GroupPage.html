@@ -45,11 +45,23 @@
       border-radius: 50%;
       margin-right: 5px;
     }
-    .homework-status.completed {
+    .homework-status.R {
+      background-color: red;
+    }
+    .homework-status.G {
+      background-color: gray;
+    }
+    .homework-status.P {
+      background-color: deeppink;
+    }
+    .homework-status.Z {
       background-color: green;
     }
-    .homework-status.not-completed {
-      background-color: red;
+    .homework-status.O {
+      background-color: orange;
+    }
+    .homework-status.Y {
+      background-color: yellow;
     }
     .student-list ul {
       list-style-type: none;
@@ -77,21 +89,36 @@
     <div class="col">
       <div class="row">
         <div class="col-md-6">
-          <div class="text-center">
-            <h1>TeamsClone</h1>
-            <h5>Страница группы</h5>
-            <h6>Отображение информации о группе и списка студентов</h6>
+          <div class="row">
+              <div class="col">
+                  <a href="/mainpage/" class="btn btn-danger">Назад</a>
+              </div>
+              <div class="col">
+                  <div class="text-center">
+                      <h1>TeamsClone</h1>
+                      <h5>Страница группы</h5>
+                      <h6>Отображение информации о группе и списка студентов</h6>
+                  </div>
+              </div>
           </div>
         </div>
         <div class="col-md-6">
-          <div class="group-info">
-            <h1>Информация о группе</h1>
-            <ul>
-              <li>ID группы: {{ group.id }}</li>
-              <li>Номер группы: {{ group.num }}</li>
-              <li>Название предмета: {{ group.subject }}</li>
-            </ul>
+          <div class="row">
+              <div class="col">
+                  <div class="group-info">
+                      <h1>Информация о группе</h1>
+                      <ul>
+                          <li>ID группы: {{ group.id }}</li>
+                          <li>Номер группы: {{ group.name }}</li>
+                          <li>Название предмета: {{ subject.name }}</li>
+                      </ul>
+                  </div>
+              </div>
+              <div class="col">
+                  <a href="/alltask/{{ group.id }}&{{ subject.id }}" class="btn btn-primary">Все задачи группы</a>
+              </div>
           </div>
+
         </div>
       </div>
       <div class="row">
@@ -101,11 +128,12 @@
             <ul>
               {% for student in students %}
                 <li>
-                    <a href="#" class="group-link">
-                        {{ student.name }}
+                    <a href="/stud/{{student.student.id}}&{{subject.id}}" class="group-link">
+                        {{ student.student.name }}
                         <ul>
                             {% for task in student.taskcomplete %}
-                                <li style="display: inline-block;"> {{ task.num }}:<span class="homework-status {% if task.status %}completed{% else %}not-completed{% endif %}"></span></li>
+{#                                <li style="display: inline-block;"> {{ task.num }} <span class="homework-status {% if task.status =  %}completed{% else %}not-completed{% endif %}"></span></li>#}
+                                <li style="display: inline-block;"> {{ task.num }} <span class="homework-status {{ task.status }}"></span></li>
                             {% endfor %}
                         </ul>
                     </a>
