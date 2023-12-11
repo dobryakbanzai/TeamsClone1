@@ -60,7 +60,7 @@
     {#  float: right;#}
     {#  margin-top: -40px;#}
     {#  margin-right: 10px;#}
-    {#}#}
+
   </style>
 </head>
 <body>
@@ -80,7 +80,7 @@
           <h1>Список групп</h1>
           <ul>
             {% for group in groups %}
-              <li><a href="/grouppage/" class="group-link">{{ group.group.name }}   |    {{ group.subject.name }}</a></li>
+              <li><a href="/grouppage/{{ group.group.id }}&{{ group.subject.id }}" class="group-link">{{ group.group.name }}   |    {{ group.subject.name }}</a></li>
             {% endfor %}
           </ul>
           <div class="col-md-6">

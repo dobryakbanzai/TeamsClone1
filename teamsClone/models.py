@@ -56,7 +56,6 @@ class Homework(models.Model):
     time_delivery = models.DateField()
 
 
-
 class Group(models.Model):
     id = models.BigAutoField(primary_key=True)
     name = models.CharField(max_length=255)

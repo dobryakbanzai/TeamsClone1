@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Список задач группы</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .task-list {
+        background-color: #5EBEC4;
+        border-radius: 10px;
+        padding: 20px;
+        color: #fff;
+        transition: background-color 0.3s ease;
+        /* Add this line to enable vertical scroll */
+        max-height: 70vh; /* Add this line to limit the height and enable scroll */
+    }
+
+    .task-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+   .group-list ul {
+        overflow-y: auto;
+        list-style-type: none;
+        padding: 0;
+        max-height: 40vh;
+    }
+    .task-list li {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .task-list a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .task-list li:hover {
+      background-color: #fff;
+      color: #5EBEC4;
+    }
+    .logout-button {
+      float: right;
+      margin-top: -40px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="text-center">
+          <h1>TeamsClone</h1>
+          <h5>Главная страница</h5>
+          <h6>Отображение всех задач группы</h6>
+            {% if messages %}
+                {% for message in messages %}
+                    <div class="alert alert-warning">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            {% endif %}
+        </div>
+      </div>
+      <div class="col-md-6">
+        <div class="task-list">
+          <h1>Список задач</h1>
+          <ul>
+            {% for task in tasks %}
+              <li>
+                  {{ task.id }}| {{ task.title }} | {{ task.description }} |
+                  {% if task.file_name != None %}
+                      <a href="/download/{{task.id}}">{{ task.file_name }}</a>
+                  {% endif %}
+              </li>
+                <br>
+            {% endfor %}
+          </ul>
+        <div class="col">
+            <a href="/createnewtask/{{group}}&{{subject}}" style="width: 100%; background-color: blueviolet">Добавить новую задачу</a>
+        </div>
+        </div>
+      </div>
+    </div>
+    <div class="row" id = "second">
+        <div class="col-md-6 offset-md-3">
+            <div class="row">
+                <form action="/logout/" method="post" >
+                <div class="col">
+                    {% csrf_token %}
+                    <a href="/grouppage/{{group}}&{{subject}}" class="btn btn-danger">Назад</a>
+                </div>
+            </form>
+            </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</body>
+</html>

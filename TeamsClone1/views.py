@@ -1,10 +1,21 @@
+from django.contrib import messages
 from django.contrib.auth import *
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.shortcuts import render, redirect
 from django.views.decorators.csrf import csrf_exempt
-from teamsClone.models import Users, Subject, Group, SubjectGroup, SubjectTeacher
+from teamsClone.models import Users, Subject, Group, SubjectGroup, SubjectTeacher, Task, Homework, GroupTask
 from teamsClone.view_web import views as dbp
+import datetime
+from django.http import HttpResponse
+from io import BytesIO
+import re
+
+
+def is_latin_and_symbols(text):
+    pattern = r'^[a-zA-Z\s\W]+$'
+    result = re.match(pattern, text)
+    return result is not None
 
 
 def sign_in(request, error=None):
@@ -73,63 +84,124 @@ def exit_from_sys(request):
 
 
 @login_required
-def stud_view(request):
-    student = {"name": "Bob", "group": "09-951"}
-    tasks = [
-        {"id": 1, "name": "task1", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 2, "name": "task2", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 3, "name": "task3", "status": "completed", "file": {"url": "#"}, "submission_date": "12-12-2023"},
-        {"id": 4, "name": "task4", "status": "not-completed", "file": {"url": "#"}, "submission_date": "12-12-2023"}
-    ]
+def stud_view(request, stud, subj):
+    student = Users.objects.get(id=stud)
+    group = Group.objects.get(id=student.group_id)
+    subject = Subject.objects.get(id=subj)
 
-    return render(request, "StudentPage.html", {"student": student, "tasks": tasks})
+    tasks = Task.objects.filter(teacher_id=int(request.user.last_name), subject_id=subject.id)
+    taskAndHomework = []
+
+    for task in tasks:
+        try:
+            homework = Homework.objects.get(student_id=stud, task_id=task.id)
+        except:
+            homework = None
+        try:
+            gt = GroupTask.objects.get(task_id=task.id, group_id=group.id)
+        except:
+            gt = None
+        taskAndHomework.append({'task': task, 'homework': homework, 'gt': gt})
+
+    return render(request, "StudentPage.html",
+                  {"student": student, "tasks": taskAndHomework, 'group': group, 'subject': subject})
 
 
 @login_required
-def group_page(request):
-    group = {"id": 1, "num": "09-915", "subject": "Python и его библиотеки"}
-    students = [
-        {"id": 1, "name": "Biba", "taskcomplete": [
-            {"num": 1, "status": True},
-            {"num": 2, "status": False},
-            {"num": 3, "status": True},
-            {"num": 4, "status": True},
-            {"num": 5, "status": True},
-            {"num": 6, "status": True},
-            {"num": 7, "status": True},
-            {"num": 8, "status": False}
-        ]},
-        {"id": 2, "name": "Boba", "taskcomplete": [
-            {"num": 1, "status": True},
-            {"num": 2, "status": True},
-            {"num": 3, "status": True},
-            {"num": 4, "status": False}
-        ]},
-        {"id": 3, "name": "Zhizha", "taskcomplete": [
-            {"num": 1, "status": True},
-            {"num": 2, "status": False},
-            {"num": 3, "status": False},
-            {"num": 4, "status": False}
-        ]}
-    ]
+def refresh_homework_status(request):
+    group = request.POST['group']
+    stud_id = request.POST['stud']
+    subject = request.POST['subject']
+    homework_ids = request.POST.getlist('homework_id')
+    is_verified_values = request.POST.getlist('is_verified')
 
-    return render(request, "GroupPage.html", {'group': group, 'students': students})
+    print(homework_ids, is_verified_values)
+
+    for homework_id, is_verified in zip(homework_ids, is_verified_values):
+
+        if homework_id != '':
+            homework = Homework.objects.get(id=int(homework_id))
+            if is_verified == 'True':
+                homework.is_verified = True
+            else:
+                homework.is_verified = False
+            homework.save()
+
+    return redirect('grouppage', group=group, subject=subject)
+
+
+@login_required
+def group_page(request, group, subject):
+    groupO = Group.objects.get(id=group)
+
+    subjectO = Subject.objects.get(id=subject)
+
+    students = Users.objects.filter(group_id=group, is_teacher=False)
+
+    tasks = Task.objects.filter(subject_id=subjectO.id, teacher_id=int(request.user.last_name),
+                                grouptask__group_id=groupO.id)
+
+    studAndTasks = []
+
+    for student in students:
+        studTaskPack = []
+        i = 1
+        for task in tasks:
+            try:
+                hw = Homework.objects.get(task_id=task.id, student_id=student.id)
+            except:
+                hw = None
+            status = ""
+
+            if hw is None:
+                deadline = GroupTask.objects.get(group_id=groupO.id, task_id=task.id).stop_deadline
+                if deadline < datetime.date.today():
+                    status = "R"
+                else:
+                    status = "G"
+            else:
+                deadline = GroupTask.objects.get(group_id=groupO.id, task_id=task.id).stop_deadline
+                if hw.is_verified:
+                    if deadline < hw.time_delivery:
+                        status = "P"
+                    else:
+                        status = "Z"
+                else:
+                    if deadline < hw.time_delivery:
+                        status = "O"
+                    else:
+                        status = "Y"
+
+            studTaskPack.append({'num': i, 'status': status})
+            i += 1
+        studAndTasks.append({'student': student, 'taskcomplete': studTaskPack})
+
+    # students = [
+    #     {"id": 1, "name": "Biba", "taskcomplete": [
+    #         {"num": 1, "status": True},
+    #         {"num": 2, "status": False},
+    #         {"num": 3, "status": True},
+    #         {"num": 4, "status": True},
+    #         {"num": 5, "status": True},
+    #         {"num": 6, "status": True},
+    #         {"num": 7, "status": True},
+    #         {"num": 8, "status": False}
+    #     ]},
+    #     {"id": 2, "name": "Boba", "taskcomplete": [
+    #         {"num": 1, "status": True},
+    #         {"num": 2, "status": True},
+    #         {"num": 3, "status": True},
+    #         {"num": 4, "status": False}
+    #     ]},
+    #     {"id": 3, "name": "Zhizha", "taskcomplete": [
+    #         {"num": 1, "status": True},
+    #         {"num": 2, "status": False},
+    #         {"num": 3, "status": False},
+    #         {"num": 4, "status": False}
+    #     ]}
+    # ]
+
+    return render(request, "GroupPage.html", {'group': groupO, 'subject': subjectO, 'students': studAndTasks})
 
 
 @login_required
@@ -163,6 +235,7 @@ def addingGroup(request):
 def createNewSubject(request):
     return render(request, "CreateNewSubject.html")
 
+
 @login_required
 def creatingNewSubject(request):
     name = request.POST['subject']
@@ -183,11 +256,13 @@ def creatingNewSubject(request):
 
     return redirect('mainpage')
 
+
 @login_required
 def addnewacademicgroup(request):
     return render(request, "AddNewAcademicGroup.html")
 
 
+@login_required
 def addingnewacademicgroup(request):
     name = request.POST['group']
 
@@ -200,3 +275,72 @@ def addingnewacademicgroup(request):
     ng.save()
 
     return redirect('mainpage')
+
+
+@login_required
+def allGroupTask(request, group, subject):
+    tasks = Task.objects.filter(subject_id=subject, teacher_id=int(request.user.last_name),
+                                grouptask__group_id=group)
+
+    return render(request, "AllGroupTasks.html", {'group': group, 'subject': subject, 'tasks': tasks})
+
+
+def createNewTask(request, group, subject):
+    return render(request, "CreateNewTask.html",
+                  {'group': group, 'subject': subject, 'teacher': int(request.user.last_name)})
+
+
+def creatingNewTask(request):
+    title = request.POST['title']
+    description = request.POST['description']
+    file = request.FILES['file']
+    group = request.POST['group']
+    subject = request.POST['subject']
+    teacher = request.POST['teacher']
+    start = request.POST['s1d']
+    dead = request.POST['s2d']
+    file_name = file.name
+    file_data = file.read()
+
+    if not is_latin_and_symbols(file_name):
+        messages.warning(request, 'Предупреждение: необходимо избегать использования кириллицы в названиях файлов.')
+        return redirect('alltask', group=group, subject=subject)
+
+    task = Task(
+        title=title,
+        description=description,
+        file_name=file_name,
+        file_byte=file_data,
+        teacher_id=teacher,
+        subject_id=subject
+    )
+    task.save()
+
+    gt = GroupTask(
+        group_id=group,
+        task_id=task.id,
+        start_deadline=start,
+        stop_deadline=dead
+    )
+
+    gt.save()
+
+    return redirect('alltask', group=group, subject=subject)
+
+
+def downloadfile(request, taskid):
+    ts = Task.objects.get(id=taskid)
+
+    response = HttpResponse(ts.file_byte, content_type='application/')
+    response['Content-Disposition'] = f'inline; filename=' + ts.file_name  # Установка имени файла для скачивания
+
+    return response
+
+
+def downloadhwfile(request, hwid):
+    hw = Homework.objects.get(id=hwid)
+
+    response = HttpResponse(hw.file_byte, content_type='application/zip')
+    response['Content-Disposition'] = f'inline; filename=' + hw.file_name  # Установка имени файла для скачивания
+
+    return response
