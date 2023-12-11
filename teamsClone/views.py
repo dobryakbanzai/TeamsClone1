@@ -130,7 +130,7 @@ def get_actual_tasks_for_group(group_id):
         (Q(grouptask__start_deadline__lte=current_date) & Q(grouptask__stop_deadline__gte=current_date))
     ).distinct()
 
-    print("Query:", actual_tasks.query)  # Вывести сформированный SQL-запрос для отладки
+    print("Query:", actual_tasks.query)
 
     for task in actual_tasks:
         print(f"Task ID: {task.id}, Title: {task.title}, Description: {task.description}")
@@ -195,11 +195,8 @@ from datetime import date
 
 
 def get_actual_tasks_for_group(group_id):
-    # Получаем текущую дату
     current_date = date.today()
 
-    # Ищем задания, у которых срок сдачи еще не наступил
-    # и задания, у которых срок сдачи еще не прошел
     actual_tasks = Task.objects.filter(
         Q(grouptask__group_id=group_id) &
         (Q(grouptask__start_deadline__lte=current_date) & Q(grouptask__stop_deadline__gte=current_date))
@@ -212,29 +209,23 @@ def get_subjects_by_teacher(teacher_id):
     return subjects
 
 def get_subjects_by_teacher_and_group(teacher_id, group_id):
-    # Получаем предметы, связанные с преподавателем
     teacher_subjects = SubjectTeacher.objects.filter(teacher__id=teacher_id).values_list('subject_id', flat=True)
 
-    # Получаем предметы, связанные с группой
     group_subjects = SubjectGroup.objects.filter(group__id=group_id).values_list('subject_id', flat=True)
 
-    # Получаем общий список предметов для преподавателя и группы
     subjects_ids = set(teacher_subjects) & set(group_subjects)
 
-    # Получаем объекты предметов по их идентификаторам
     subjects = Subject.objects.filter(id__in=subjects_ids)
 
     return subjects
 
 
 def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_bytes, file_name, user_id, subject):
-    # Задаем фиксированную дату
     start = datetime.strptime(startDL, "%d-%m-%Y").date()
     stop = datetime.strptime(stopDL, "%d-%m-%Y").date()
 
     existing_group = Group.objects.get(name=group)
     existing_subject = Subject.objects.get(name=subject)
-    # Create a new task instance
 
     new_task = Task(
         title=title,
@@ -250,8 +241,8 @@ def add_task(user_tg_id, group, title, description, startDL, stopDL, file_task_b
     new_group_task = GroupTask(
         task=new_task,
         group=existing_group,
-        start_deadline=start,  # Replace with the actual start deadline
-        stop_deadline=stop  # Replace with the actual stop deadline
+        start_deadline=start,
+        stop_deadline=stop
     )
 
     new_group_task.save()
@@ -283,16 +274,16 @@ from django.core.exceptions import ObjectDoesNotExist
 
 def create_user_with_checks(name, login, password, telegram_id, is_teacher, group_name, subject_name, teacher_name):
     try:
-        # Проверка существования группы
+
         group = Group.objects.get(name=group_name)
 
-        # Проверка существования пользователя (преподавателя)
+
         teacher = Users.objects.get(name=teacher_name, is_teacher=True)
 
-        # Проверка существования предмета
+
         subject = Subject.objects.get(name=subject_name)
 
-        # Создание пользователя
+
         user = Users.objects.create(
             name=name,
             login=login,
@@ -302,12 +293,12 @@ def create_user_with_checks(name, login, password, telegram_id, is_teacher, grou
             group=group
         )
 
-        # Если пользователь - студент, связываем его с предметом
+
         if not is_teacher:
             SubjectGroup.objects.create(
                 group=group,
                 subject=subject,
-                url_online_education=None  # Здесь вы можете указать ссылку на онлайн-обучение, если это необходимо
+                url_online_education=None
             )
 
         return user
@@ -342,17 +333,16 @@ def get_subject_id_by_name(subject_name):
 
 
 def check_teacher_subject_group(teacher_name, subject_id, group_id):
-    # Проверка существования преподавателя с указанным именем
+
     teacher_exists = Users.objects.filter(name=teacher_name, is_teacher=True).exists()
 
     if teacher_exists:
-        # Проверка, что преподаватель ведет указанный предмет для данной группы
+
         teacher_id = Users.objects.get(name=teacher_name, is_teacher=True).id
         subject_teacher_exists = SubjectTeacher.objects.filter(
             teacher_id=teacher_id, subject_id=subject_id).exists()
 
         if subject_teacher_exists:
-            # Проверка, что группа связана с указанным предметом
             group_subject_exists = SubjectGroup.objects.filter(
                 group_id=group_id, subject_id=subject_id).exists()
 

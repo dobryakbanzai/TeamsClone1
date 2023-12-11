@@ -52,17 +52,17 @@ def login_view(request):
     if request.method == 'POST':
         username = request.POST['username']
         password = request.POST['password']
-        # user = User.objects.create_user(username, "lennon@thebeatles.com", password)
+
 
         user1 = authenticate(request, username=username, password=password)
-        # user.save()
+
 
         if user1 is not None:
             login(request, user1)
-            # Пользователь успешно авторизован, перенаправьте его на защищенную страницу
+
             return redirect('mainpage')
         else:
-            # Неверные данные логина или пароля, покажите ошибку
+
             return redirect('firsterrorpage', error="Invalid login")
     else:
         return redirect('firstpage', error=None)
@@ -76,11 +76,8 @@ def all_groups(request):
 
 @csrf_exempt
 def exit_from_sys(request):
-    # Выполните необходимые операции при выходе
-    # Например, вы можете очистить сессию или выполнить другие задачи по очистке
-    # ...
 
-    return redirect('/')  # Перенаправление на желаемую страницу после успешного выхода
+    return redirect('/')
 
 
 @login_required
@@ -176,30 +173,7 @@ def group_page(request, group, subject):
             i += 1
         studAndTasks.append({'student': student, 'taskcomplete': studTaskPack})
 
-    # students = [
-    #     {"id": 1, "name": "Biba", "taskcomplete": [
-    #         {"num": 1, "status": True},
-    #         {"num": 2, "status": False},
-    #         {"num": 3, "status": True},
-    #         {"num": 4, "status": True},
-    #         {"num": 5, "status": True},
-    #         {"num": 6, "status": True},
-    #         {"num": 7, "status": True},
-    #         {"num": 8, "status": False}
-    #     ]},
-    #     {"id": 2, "name": "Boba", "taskcomplete": [
-    #         {"num": 1, "status": True},
-    #         {"num": 2, "status": True},
-    #         {"num": 3, "status": True},
-    #         {"num": 4, "status": False}
-    #     ]},
-    #     {"id": 3, "name": "Zhizha", "taskcomplete": [
-    #         {"num": 1, "status": True},
-    #         {"num": 2, "status": False},
-    #         {"num": 3, "status": False},
-    #         {"num": 4, "status": False}
-    #     ]}
-    # ]
+
 
     return render(request, "GroupPage.html", {'group': groupO, 'subject': subjectO, 'students': studAndTasks})
 
@@ -332,7 +306,7 @@ def downloadfile(request, taskid):
     ts = Task.objects.get(id=taskid)
 
     response = HttpResponse(ts.file_byte, content_type='application/')
-    response['Content-Disposition'] = f'inline; filename=' + ts.file_name  # Установка имени файла для скачивания
+    response['Content-Disposition'] = f'inline; filename=' + ts.file_name
 
     return response
 
@@ -341,6 +315,6 @@ def downloadhwfile(request, hwid):
     hw = Homework.objects.get(id=hwid)
 
     response = HttpResponse(hw.file_byte, content_type='application/zip')
-    response['Content-Disposition'] = f'inline; filename=' + hw.file_name  # Установка имени файла для скачивания
+    response['Content-Disposition'] = f'inline; filename=' + hw.file_name
 
     return response
