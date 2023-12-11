@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница группы</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    button {
+        background-color: #87CEFA;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .group-info, .student-list {
+      background-color: #5EBEC4;
+      border-radius: 10px;
+      padding: 20px;
+      color: #fff;
+      transition: background-color 0.3s ease;
+    }
+    .group-info h1, .student-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .group-info ul, .student-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .group-info li, .student-list li {
+      margin-bottom: 10px;
+    }
+    .homework-status {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .homework-status.completed {
+      background-color: green;
+    }
+    .homework-status.not-completed {
+      background-color: red;
+    }
+    .student-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .student-list li {
+      margin-bottom: 10px;
+    }
+    .student-list a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .student-list a:hover {
+      background-color: #fff;
+      color: #5EBEC4;
+    }
+    .add-group-form {
+      background-color: #fff;
+      border-radius: 10px;
+      padding: 20px;
+      margin-top: 20px;
+    }
+    .add-group-form label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .add-group-form input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .add-group-form button {
+      background-color: #87CEFA;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    select {
+  padding: 10px; /* Добавление отступов вокруг списка */
+  font-size: 16px; /* Увеличение размера шрифта */
+  border: 1px solid #ccc; /* Добавление рамки вокруг списка */
+  border-radius: 5px; /* Добавление скругленных углов */
+  background-color: #f2f2f2; /* Изменение цвета фона */
+  width: 200px; /* Задание ширины списка */
+  outline: none; /* Удаление контура фокуса */
+}
+
+/* Стилизация опций в выпадающем списке */
+select option {
+  padding: 10px; /* Добавление отступов вокруг опций */
+  font-size: 16px; /* Увеличение размера шрифта */
+  background-color: #fff; /* Изменение цвета фона опций */
+  color: #000; /* Изменение цвета текста опций */
+}
+
+/* Изменение стиля при наведении на опцию */
+select option:hover {
+  background-color: #f2f2f2; /* Изменение цвета фона при наведении */
+}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="text-center">
+            <h1>TeamsClone</h1>
+            <h5>Добавление новой группы/предмета</h5>
+            <a href="/mainpage/" class="btn btn-primary">Назад</a>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="add-group-form">
+            <h1>Добавление новой группы/предмета</h1>
+{#          addinggroup #}
+            <form method="post" action="{% url 'addinggroup' %}">
+                {% csrf_token %}
+                <label for="group">Выберите группу:</label>
+                <select id="group" name="group">
+                    {% for group in groups %}
+                        <option value="{{ group.id }}">{{ group.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="subject">Выберите предмет:</label>
+                <select id="subject" name="subject">
+                    {% for subject in subjects %}
+                        <option value="{{ subject.id }}">{{ subject.name }}</option>
+                    {% endfor %}
+                </select>
+
+                <label for="resource">Ссылка на ресурс:</label>
+                <input type="text" id="resource" name="resource" required>
+                <button type="submit">Добавить</button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    /* Your JavaScript here */
+  </script>
+</body>
+</html>

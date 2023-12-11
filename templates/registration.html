@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница регистрации</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    @font-face {
+        font-family: "Roboto";
+        font-style: normal;
+        font-weight: 400;
+        /* Браузер сначала попробует найти шрифт локально */
+        src: local("Roboto"),
+       /* Если не получилось, загрузит woff2 */
+       url("/fonts/roboto.woff2") format("woff2"),
+       /* Если браузер не поддерживает woff2, загрузит woff */
+       url("/fonts/roboto.woff") format("woff");
+    }
+
+    body {
+      background-color: #FDF5DF;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .register-form {
+      background-color: #5EBEC4;
+      border-radius: 10px;
+      padding: 20px;
+      color: #fff;
+    }
+    .register-form h1 {
+        font-size: 50px;
+        font-weight: bold;
+        font-family: "Roboto", "Arial", sans-serif;
+        margin-bottom: 20px;
+    }
+    .register-form input {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 10px;
+      border-radius: 5px;
+      border: none;
+    }
+    .register-form button {
+      width: 100%;
+      padding: 10px;
+      border-radius: 5px;
+      border: none;
+      background-color: #F92C85;
+      color: #fff;
+      font-weight: bold;
+    }
+    .register-form a {
+      color: #fff;
+      text-decoration: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="row">
+      <div class="col-md-6">
+        <div class="text-center">
+          <h1>TeamsClone</h1>
+          <h5>Teams task manager clone</h5>
+        </div>
+      </div>
+      <div class="col-md-6">
+        <form class="register-form" method="post" action="{% url 'registrate' %}">
+          {% csrf_token %}
+          <h1>Регистрация</h1>
+          <input type="text" name="username" placeholder="Логин">
+          <input type="text" name="flname" placeholder="ФИО">
+          <input type="password" name="password" placeholder="Пароль">
+          <button type="submit">Зарегистрироваться</button>
+          <a href="/">Вход</a>
+        </form>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

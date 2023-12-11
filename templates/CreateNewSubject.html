@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница с добавлением предмета</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .form-container {
+      width: 50%;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+    }
+    .form-container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-container label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .form-container input[type="text"] {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .form-container button {
+      background-color: #87CEFA;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+        <h1>TeamsClone</h1>
+        <h5>Добавление нового предмета</h5>
+        <a href="/mainpage/" class="btn btn-primary">Назад</a>
+      <form action="{% url 'creatingnewsubject' %}" method="POST">
+          {% csrf_token %}
+            <label for="subject">Название предмета:</label>
+
+            <input type="text" id="subject" name="subject" required>
+
+        <button class="btn btn-primary" type="submit">Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    /* Ваш JavaScript здесь */
+  </script>
+</body>
+</html>

@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница группы</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    button {
+        background-color: #87CEFA;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .group-info, .student-list {
+      background-color: #5EBEC4;
+      border-radius: 10px;
+      padding: 20px;
+      color: #fff;
+      transition: background-color 0.3s ease;
+    }
+    .group-info h1, .student-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .group-info ul, .student-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .group-info li, .student-list li {
+      margin-bottom: 10px;
+    }
+    .homework-status {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+    .homework-status.R {
+      background-color: red;
+    }
+    .homework-status.G {
+      background-color: gray;
+    }
+    .homework-status.P {
+      background-color: deeppink;
+    }
+    .homework-status.Z {
+      background-color: green;
+    }
+    .homework-status.O {
+      background-color: orange;
+    }
+    .homework-status.Y {
+      background-color: yellow;
+    }
+    .student-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .student-list li {
+      margin-bottom: 10px;
+    }
+    .student-list a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .student-list a:hover {
+      background-color: #fff;
+      color: #5EBEC4;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+      <div class="row">
+        <div class="col-md-6">
+          <div class="row">
+              <div class="col">
+                  <a href="/mainpage/" class="btn btn-danger">Назад</a>
+              </div>
+              <div class="col">
+                  <div class="text-center">
+                      <h1>TeamsClone</h1>
+                      <h5>Страница группы</h5>
+                      <h6>Отображение информации о группе и списка студентов</h6>
+                  </div>
+              </div>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="row">
+              <div class="col">
+                  <div class="group-info">
+                      <h1>Информация о группе</h1>
+                      <ul>
+                          <li>ID группы: {{ group.id }}</li>
+                          <li>Номер группы: {{ group.name }}</li>
+                          <li>Название предмета: {{ subject.name }}</li>
+                      </ul>
+                  </div>
+              </div>
+              <div class="col">
+                  <a href="/alltask/{{ group.id }}&{{ subject.id }}" class="btn btn-primary">Все задачи группы</a>
+              </div>
+          </div>
+
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-md-6">
+          <div class="student-list">
+            <h1>Список студентов</h1>
+            <ul>
+              {% for student in students %}
+                <li>
+                    <a href="/stud/{{student.student.id}}&{{subject.id}}" class="group-link">
+                        {{ student.student.name }}
+                        <ul>
+                            {% for task in student.taskcomplete %}
+{#                                <li style="display: inline-block;"> {{ task.num }} <span class="homework-status {% if task.status =  %}completed{% else %}not-completed{% endif %}"></span></li>#}
+                                <li style="display: inline-block;"> {{ task.num }} <span class="homework-status {{ task.status }}"></span></li>
+                            {% endfor %}
+                        </ul>
+                    </a>
+                </li>
+              {% endfor %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    /* Your JavaScript here */
+  </script>
+</body>
+</html>

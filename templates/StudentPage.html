@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница студента</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color:  #DDA0DD;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .student-info{
+      background-color: #FFEBCD;
+      border-radius: 10px;
+      padding: 20px;
+      color: #000000;
+      transition: background-color 0.3s ease;
+    }
+    .student-info h1, .task-list h1 {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 20px;
+    }
+    .student-info ul, .task-list ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    .student-info li, .task-list li {
+      margin-bottom: 10px;
+    }
+    .task-status {
+      display: inline-block;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      margin-right: 5px;
+    }
+
+    .task-list ul{
+        background-color: #AFEEEE;
+        text-align: center;
+        overflow-y: scroll;
+        height: 500px;
+    }
+    .task-list{
+        background-color: #AFEEEE;
+        text-align: center;
+        height: 600px;
+    }
+
+    .task-status.completed {
+      background-color: green;
+    }
+    .task-status.not-completed {
+      background-color: red;
+    }
+    ul {
+      list-style-type: none;
+      padding: 0;
+    }
+    li {
+      margin-bottom: 10px;
+    }
+    a {
+      color: #fff;
+      text-decoration: none;
+      border-radius: 5px;
+      padding: 5px 10px;
+      display: inline-block;
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    .task-list a:hover {
+      background-color: #fff;
+      color: #ffb779;
+    }
+    select {
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        background-color: #fff;
+        color: #000;
+        transition: border-color 0.3s ease, background-color 0.3s ease, color 0.3s ease;
+    }
+
+    button:hover{
+        box-shadow: 0px 5px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    select:hover {
+        border-color: #5EBEC4;
+    }
+
+    select:focus {
+        outline: none;
+        border-color: #5EBEC4;
+        background-color: #FDF5DF;
+        color: #000;
+    }
+
+    form ul::-webkit-scrollbar {
+        width: 10px;
+    }
+
+    form ul::-webkit-scrollbar-track {
+        background-color: #f1f1f1;
+    }
+
+    form ul::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 5px;
+    }
+
+    form ul::-webkit-scrollbar-thumb:hover {
+        background-color: #555;
+    }
+
+    form ul{
+        height: 500px;
+    }
+
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="col">
+        <div class="row">
+            <div class="col" style="text-align: center">
+                <div class="row">
+                    <div class="col-md-3">
+                        <a href="/grouppage/{{ group.id }}&{{ subject.id }}" class="btn " style="color: white; background-color: #FFA07A">НАЗАД</a>
+                    </div>
+                    <div class="col">
+                        <div class="text-center">
+                            <h1>TeamsClone</h1>
+                            <h5>Страница группы</h5>
+                            <h6>Отображение информации студенте и его работах</h6>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col" style="text-align: center">
+                <div class="student-info">
+                    <h1>ИНФОРМАЦИЯ О СТУДЕНТЕ</h1>
+                    <ul>
+                        <li>Имя {{ student.name }}</li>
+                        <li>Группа  {{ group.name }}</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="row">
+            <div class="col" id="header" style="text-align: center">
+                <br>
+                <h1>СПИСОК ЗАДАНИЙ СТУДЕНТА</h1>
+                <br>
+            </div>
+        </div>
+        <div class="row" >
+            <div class="col">
+                <div class="task-list" >
+                    <form method="post" action="{% url 'refresh' %}">
+                     {% csrf_token %}
+                        <input type="hidden" name="group" value="{{ group.id }}">
+                        <input type="hidden" name="subject" value="{{ subject.id }}">
+                        <input type="hidden" name="stud" value="{{ student.id }}">
+                        <ul>
+                            {% for task in tasks %}
+                                <li style="background-color: {% if task.homework == None %} rgba(255,0,0,0.34) {% else %} rgba(255,255,255,0.4) {% endif %} ">
+                                    <input type="hidden" name="homework_id" value={{task.homework.id}}>
+                                    {{task.homework.id}}
+                                    Задача: {{ task.task.title }}
+                                    <br>
+                                    Время назначения: {{ task.gt.start_deadline }}
+                                    <br>
+                                    Дедлайн: {{ task.gt.stop_deadline }}
+                                    {% if task.homework != None %}
+                                        <br>
+                                        {% if task.homework.file_name != None %} <a href="/downloadhw/{{task.homework.id}}">{{task.homework.file_name}}</a> {% endif %}
+                                        <br>
+                                        Время Сдачи: {{ task.homework.time_delivery }}
+                                        <br>
+                                        <label>
+                                            <select name="is_verified">
+                                                   <option value={{ True }} {% if task.homework.is_verified == True %} selected {% endif %}>Принято</option>
+                                                   <option value={{ False }} {% if task.homework.is_verified != True %} selected {% endif %}>Не принято</option>
+                                            </select>
+                                        </label>
+                                    {% else %}
+                                        <input type="hidden" value="" name="is_verified">
+                                    {% endif %}
+                                </li>
+                            {% endfor %}
+                        </ul>
+                        <button type="submit" class="btn" style="background-color: #98FB98">ПРИНЯТЬ</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    $(document).ready(function() {
+      console.log("Страница загружена");
+      // Ваш JavaScript код
+    });
+  </script>
+</body>
+</html>

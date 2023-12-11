@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Страница с созданием новых задач</title>
+  <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css">
+  <style>
+    body {
+      background-color: #FDF5DF;
+    }
+    .container {
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+    }
+    .form-container {
+      width: 50%;
+      padding: 20px;
+      background-color: #fff;
+      border-radius: 10px;
+    }
+    .form-container h1 {
+      text-align: center;
+      margin-bottom: 20px;
+    }
+    .form-container label {
+      display: block;
+      margin-bottom: 10px;
+    }
+    .form-container input {
+      width: 100%;
+      padding: 5px;
+      border-radius: 5px;
+      border: 1px solid #ccc;
+      margin-bottom: 10px;
+    }
+    .form-container button {
+      background-color: #87CEFA;
+      color: #fff;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="form-container">
+        <h1>TeamsClone</h1>
+        <h5>Добавление новой задачи</h5>
+        <a href="/mainpage/" class="btn btn-primary">Назад</a>
+      <form action="{% url 'creatingnewtask' %}" method="POST" enctype="multipart/form-data">
+          {% csrf_token %}
+            <label for="title">Заголовок:</label>
+            <input type="text" id="title" name="title" required>
+
+            <label for="description">Описание:</label>
+            <input type="text" id="description" name="description" required>
+
+          <label for="s1d">Дата создания:</label>
+            <input type="date" id="s1d" name="s1d" required>
+
+            <label for="s1d">Дедлайн:</label>
+            <input type="date" id="s1d" name="s2d" required>
+
+            <label for="file">Файл:</label>
+            <input type="file" id="file" name="file" required>
+
+            <input type="hidden" id="teacher" name="teacher" value="{{ teacher }}">
+            <input type="hidden" id="subject" name="subject" value="{{ subject }}">
+            <input type="hidden" id="group" name="group" value="{{ group }}">
+
+        <button class="btn btn-primary" type="submit">Добавить</button>
+      </form>
+    </div>
+  </div>
+
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <script>
+    /* Ваш JavaScript здесь */
+  </script>
+</body>
+</html>
