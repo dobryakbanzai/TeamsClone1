@@ -17,7 +17,7 @@ title = None
 description = None
 startDL = None
 stopDL = None
-file_task_bytes = []
+file_task_bytes = None
 file_name = None
 file_task = None
 
@@ -144,9 +144,8 @@ def view_homeworks(is_verified, user, message):
         result += "\n"
         result += f"Преподаватель: {homework.task.teacher.name}\n"
         result += f"Предмет: {homework.task.subject.name}\n"
-        result += "\n"
         result += f"Задание: {homework.task.title}\n"
-        result += f"Время сдачи: {homework.time_delivery}\n"
+        result += f"Описание задания: {homework.task.description}\n"
         result += "\n"
 
         bot.send_message(message.chat.id, text=result)
@@ -723,8 +722,7 @@ def func(message):
                               "/addTeacherTgId \n"
                               "Для студентов доступно: \n"
                               "/addHomeWork Прикрепить домашнее задание \n"
-                              "/checkCurrentDeadline Просмотр информации по предмету \n"
-                              "/createUser Просмотр актуальных дедлайнов \n"
+                              "/checkCurrentDeadline Просмотр актуальных дедлайнов \n"
                               "/getUnverifiedHomeworks Просмотр  не принятых заданий \n"
                               "/getVerifiedHomeworks Просмотр принятых заданий \n"
                               "/createUser Создать студента"

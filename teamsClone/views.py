@@ -19,6 +19,7 @@ def get_unique_groups():
 
 from django.db import connection
 
+
 def get_groups_by_teacher_and_subject(teacher_id, subject_id):
     groups = Group.objects.filter(
         subjectgroup__teacher_id=teacher_id,
@@ -26,6 +27,8 @@ def get_groups_by_teacher_and_subject(teacher_id, subject_id):
     ).distinct()
 
     return groups
+
+
 def get_teacher_studing_groups(teacher_name):
     teacher_name = "amir"
     # Создайте запрос и извлеките SQL-запрос и параметры
@@ -207,9 +210,11 @@ def get_actual_tasks_for_group(group_id):
 
     return actual_tasks
 
+
 def get_subjects_by_teacher(teacher_id):
     subjects = Subject.objects.filter(subjectteacher__teacher_id=teacher_id).distinct()
     return subjects
+
 
 def get_subjects_by_teacher_and_group(teacher_id, group_id):
     # Получаем предметы, связанные с преподавателем
@@ -263,19 +268,32 @@ def add_homework_in_db(student, title, description, task_id, file_name, file_byt
     except GroupTask.DoesNotExist:
         raise ValueError("Задание не найдено в GroupTask")
 
-    # Создание нового домашнего задания
-    homework = Homework.objects.create(
-        student_id=student.id,
-        title=title,
-        description=description,
-        task_id=task_id,
-        file_name=file_name,
-        file_byte=file_byte,
-        is_verified=None,
-        time_delivery=datetime.now().date()
-    )
-
-    return homework
+    hm = None
+    try:
+        hm = Homework.objects.get(student_id=student.id, task_id=task_id)
+    except:
+        hm = None
+    if hm:
+        hm.title = title
+        hm.description = description
+        hm.file_name = file_name
+        hm.file_byte = file_byte
+        hm.is_verified = None
+        hm.time_delivery = datetime.now().date()
+        hm.save()
+    else:
+        print(file_name)
+        print(file_byte)
+        homework = Homework.objects.create(
+            student_id=student.id,
+            title=title,
+            description=description,
+            task_id=task_id,
+            file_name=file_name,
+            file_byte=file_byte,
+            is_verified=None,
+            time_delivery=datetime.now().date()
+        )
 
 
 from django.core.exceptions import ObjectDoesNotExist
