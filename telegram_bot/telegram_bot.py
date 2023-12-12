@@ -333,79 +333,83 @@ def add_homework(message):
     user = get_user_by_tg_id(user_tg_id)
     markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
 
-    if teacher_id is None:
-        teacher_list = get_all_teacher()
-        for name in teacher_list:
-            button_text = f"{name.get('id')}: {name.get('name')}"
-            markup.add(types.KeyboardButton(button_text))
-        bot.send_message(message.chat.id,
-                         text="Выберите Вашего преподавателя из списка".format(message.from_user),
-                         reply_markup=markup)
-        states[message.chat.id] = "get_teacher"
-    elif task is None:
-        markup = types.ReplyKeyboardRemove(selective=False)
-        task_list = get_task_from_user(user.id, user.group_id, teacher_id)
-        for task_content in task_list:
-            name_subject = get_subject(task_content.subject_id)
-            name_subject = name_subject[0]['name'] if name_subject else 'Неизвестно'
-
-            message_text = (f"ID: {task_content.id} \n"
-                            f"Заголовок: {task_content.title}\n"
-                            f"Описание: {task_content.description}\n"
-                            f"Преподаватель: {teacher_name}\n"
-                            f"Название предмета: {name_subject}")
+    try:
+        if teacher_id is None:
+            teacher_list = get_all_teacher()
+            for name in teacher_list:
+                button_text = f"{name.get('id')}: {name.get('name')}"
+                markup.add(types.KeyboardButton(button_text))
             bot.send_message(message.chat.id,
-                             text=message_text.format(message.from_user),
+                             text="Выберите Вашего преподавателя из списка".format(message.from_user),
                              reply_markup=markup)
-            if not task_content.file_name is None:
-                file_byte_io = BytesIO(task_content.file_byte)
-                file_byte_io.name = task_content.file_name
+            states[message.chat.id] = "get_teacher"
+        elif task is None:
+            markup = types.ReplyKeyboardRemove(selective=False)
+            task_list = get_task_from_user(user.id, user.group_id, teacher_id)
+            for task_content in task_list:
+                name_subject = get_subject(task_content.subject_id)
+                name_subject = name_subject[0]['name'] if name_subject else 'Неизвестно'
 
-                bot.send_document(message.chat.id, file_byte_io)
-        bot.send_message(message.chat.id,
-                         text="Напишите ID задания, которые собираетесь сдать?".format(message.from_user),
-                         reply_markup=markup)
-        states[message.chat.id] = "get_task"
-    elif title is None:
-        markup = types.ReplyKeyboardRemove(selective=False)
-        bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
-        states[message.chat.id] = "title_homework"
-    elif description is None:
-        bot.send_message(message.chat.id, 'Напишите описание для задания')
-        states[message.chat.id] = "description_homework"
-    elif file_task is None:
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        btn1 = types.KeyboardButton("Да")
-        btn2 = types.KeyboardButton("Нет")
-        markup.add(btn1, btn2)
-        bot.send_message(message.chat.id, text="Вы хотите отправить файл?", reply_markup=markup)
+                message_text = (f"ID: {task_content.id} \n"
+                                f"Заголовок: {task_content.title}\n"
+                                f"Описание: {task_content.description}\n"
+                                f"Преподаватель: {teacher_name}\n"
+                                f"Название предмета: {name_subject}")
+                bot.send_message(message.chat.id,
+                                 text=message_text.format(message.from_user),
+                                 reply_markup=markup)
+                if not task_content.file_name is None:
+                    file_byte_io = BytesIO(task_content.file_byte)
+                    file_byte_io.name = task_content.file_name
 
-        states[message.chat.id] = "file_task_homework"
-    if (file_task is not None and teacher_id is not None and task is not None and title is not None
-            and description is not None and file_task is not None):
-        markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
-        add_homework_in_db(
-            user,
-            title,
-            description,
-            task_id,
-            file_name,
-            file_task_bytes
-        )
-        bot.send_message(message.chat.id, text="Домашнее задание добавлено", reply_markup=markup)
-        title = None
-        description = None
-        file_task_bytes = []
-        file_name = None
-        file_task = None
-        task_id = None
-        teacher_id = None
-        teacher_name = None
-        task = None
-        time_delivery = None
+                    bot.send_document(message.chat.id, file_byte_io)
+            bot.send_message(message.chat.id,
+                             text="Напишите ID задания, которые собираетесь сдать?".format(message.from_user),
+                             reply_markup=markup)
+            states[message.chat.id] = "get_task"
+        elif title is None:
+            markup = types.ReplyKeyboardRemove(selective=False)
+            bot.send_message(message.chat.id, 'Напишите заголовок для задания', reply_markup=markup)
+            states[message.chat.id] = "title_homework"
+        elif description is None:
+            bot.send_message(message.chat.id, 'Напишите описание для задания')
+            states[message.chat.id] = "description_homework"
+        elif file_task is None:
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            btn1 = types.KeyboardButton("Да")
+            btn2 = types.KeyboardButton("Нет")
+            markup.add(btn1, btn2)
+            bot.send_message(message.chat.id, text="Вы хотите отправить файл?", reply_markup=markup)
 
-        states[message.chat.id] = None
-        start(message)
+            states[message.chat.id] = "file_task_homework"
+        if (file_task is not None and teacher_id is not None and task is not None and title is not None
+                and description is not None and file_task is not None):
+            markup = types.ReplyKeyboardMarkup(resize_keyboard=True)
+            add_homework_in_db(
+                user,
+                title,
+                description,
+                task_id,
+                file_name,
+                file_task_bytes
+            )
+            bot.send_message(message.chat.id, text="Домашнее задание добавлено", reply_markup=markup)
+            title = None
+            description = None
+            file_task_bytes = []
+            file_name = None
+            file_task = None
+            task_id = None
+            teacher_id = None
+            teacher_name = None
+            task = None
+            time_delivery = None
+
+            states[message.chat.id] = None
+            start(message)
+    except Exception as e:
+        print(f"An error occurred: {e}")
+        raise
 
 
 @bot.message_handler(func=lambda message: states.get(message.chat.id) == "get_task", content_types=['text'])
